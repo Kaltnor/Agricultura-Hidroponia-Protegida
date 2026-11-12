@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calculadora de soluciones nutritivas</title>
+<style>
+:root{
+  --ink:#25352F; --muted:#67746F; --dark:#174B3B; --green:#2D6A55; --teal:#2E7180; --orange:#B65A2A;
+  --red:#B74235; --gold:#B7801A; --gold-bg:#FBF1DC; --red-bg:#F8E4E0; --ok-bg:#E3F0E7; --pale:#E8F0EA;
+  --bg:#F6F4EE; --card:#FFFFFF; --line:#E2DED3; --tA:#B65A2A; --tB:#2E7180; --tC:#B74235; --tD:#67746F;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 "Segoe UI",Arial,Helvetica,sans-serif}
+header{background:var(--dark);color:#fff;padding:18px 16px 16px}
+header .wrap{max-width:1280px;margin:0 auto}
+header h1{margin:0;font-size:22px;letter-spacing:.2px}
+header p{margin:4px 0 0;color:#CFE3D8;font-size:14px}
+main{max-width:1280px;margin:0 auto;padding:16px}
+.grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:16px;align-items:start}
+@media (max-width:980px){.grid{grid-template-columns:minmax(0,1fr)}}
+select{max-width:100%}
+.sticky{position:sticky;top:12px}
+@media (max-width:980px){.sticky{position:static}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:16px;box-shadow:0 1px 3px rgba(31,51,45,.06)}
+.card h2{margin:0 0 4px;font-size:17px;color:var(--dark)}
+.card h2 .n{display:inline-block;width:24px;height:24px;border-radius:12px;background:var(--dark);color:#fff;text-align:center;font-size:13px;line-height:24px;margin-right:8px;vertical-align:1px}
+.hint{color:var(--muted);font-size:13px;margin:0 0 10px}
+label{font-size:13px;color:var(--muted)}
+select,input{font:inherit;color:var(--ink);border:1px solid #CFCABD;border-radius:8px;padding:6px 8px;background:#fff;min-width:0}
+input.num{width:100%;text-align:right}
+input.bad{border-color:var(--red);background:var(--red-bg)}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:end}
+.row > div{display:flex;flex-direction:column;gap:3px}
+.btn{font:inherit;font-size:14px;border:1px solid var(--dark);background:#fff;color:var(--dark);border-radius:20px;padding:6px 14px;cursor:pointer}
+.btn:hover{background:var(--pale)}
+.btn.solid{background:var(--dark);color:#fff}
+.btn.solid:hover{background:#0F3a2d}
+.btn.x{border:none;background:none;color:var(--muted);font-size:20px;padding:0 6px;line-height:1}
+.btn.x:hover{color:var(--red)}
+.presets{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 2px}
+.water{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px 10px}
+.water div{display:flex;flex-direction:column;gap:2px}
+.water small{color:var(--muted);font-size:12px;text-align:right}
+table{border-collapse:collapse;width:100%}
+th,td{padding:6px 8px;text-align:left;vertical-align:middle}
+th{font-size:12px;color:var(--muted);font-weight:600;border-bottom:2px solid var(--line)}
+td{border-bottom:1px solid #EFECE4}
+td.r,th.r{text-align:right}
+.prod td{padding:5px 4px}
+.prod select.p{width:100%}
+.prod .unit{font-size:12px;color:var(--muted);white-space:nowrap}
+.prod .contrib{font-size:12px;color:var(--muted);padding-top:0;border-bottom:1px solid #EFECE4}
+.prod tr.main td{border-bottom:none}
+.tk{font-weight:700;border-radius:8px;padding:5px 6px}
+.tk.A{color:var(--tA)} .tk.B{color:var(--tB)} .tk.C{color:var(--tC)} .tk.D{color:var(--tD)}
+.scroll{overflow-x:auto}
+.tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:12px}
+.tile{border-radius:12px;padding:12px;background:var(--pale);border-left:6px solid var(--green)}
+.tile .k{font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+.tile .v{font-size:30px;font-weight:700;color:var(--ink);line-height:1.15}
+.tile .v small{font-size:14px;font-weight:600;color:var(--muted)}
+.tile .s{font-size:13px;margin-top:2px}
+.tile.ok{background:var(--ok-bg);border-color:var(--green)}
+.tile.warn{background:var(--gold-bg);border-color:var(--gold)}
+.tile.err{background:var(--red-bg);border-color:var(--red)}
+.msgs{list-style:none;margin:0;padding:0}
+.msgs li{border-radius:10px;padding:8px 10px 8px 34px;margin-bottom:6px;position:relative;font-size:14px}
+.msgs li::before{position:absolute;left:10px;top:7px;font-weight:700;width:18px;height:18px;border-radius:9px;color:#fff;text-align:center;font-size:12px;line-height:18px}
+.msgs li.err{background:var(--red-bg)} .msgs li.err::before{content:"!";background:var(--red)}
+.msgs li.warn{background:var(--gold-bg)} .msgs li.warn::before{content:"!";background:var(--gold)}
+.msgs li.ok{background:var(--ok-bg)} .msgs li.ok::before{content:"✓";background:var(--green)}
+.msgs li.info{background:#EEF3F6} .msgs li.info::before{content:"i";background:var(--teal)}
+.msgs b{color:var(--ink)}
+.counts{display:flex;gap:8px;margin:0 0 8px;flex-wrap:wrap}
+.pill{border-radius:12px;padding:2px 10px;font-size:13px;font-weight:700;color:#fff}
+.pill.err{background:var(--red)} .pill.warn{background:var(--gold)} .pill.ok{background:var(--green)}
+.dev{font-weight:700}
+.dev.ok{color:var(--green)} .dev.warn{color:var(--gold)} .dev.err{color:var(--red)}
+.tanks{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.tank{border:1px solid var(--line);border-radius:12px;padding:12px;border-top:6px solid var(--tD)}
+.tank.A{border-top-color:var(--tA)} .tank.B{border-top-color:var(--tB)} .tank.C{border-top-color:var(--tC)}
+.tank h3{margin:0 0 2px;font-size:16px}
+.tank.A h3{color:var(--tA)} .tank.B h3{color:var(--tB)} .tank.C h3{color:var(--tC)}
+.tank .sub{font-size:12px;color:var(--muted);margin-bottom:8px}
+.tank .it{padding:6px 0;border-top:1px solid #EFECE4}
+.tank .it .t{display:flex;justify-content:space-between;gap:8px;font-weight:600}
+.tank .it .t span:last-child{white-space:nowrap}
+.tank .it .d{font-size:12px;color:var(--muted)}
+.bar{height:8px;border-radius:4px;background:#ECE8DE;margin-top:4px;overflow:hidden}
+.bar i{display:block;height:100%;border-radius:4px;background:var(--teal)}
+.bar.warn i{background:var(--gold)} .bar.err i{background:var(--red)}
+.tank .state{font-size:13px;margin-top:8px;font-weight:600}
+.tank .state.err{color:var(--red)} .tank .state.ok{color:var(--green)}
+details{margin-top:4px}
+summary{cursor:pointer;color:var(--dark);font-weight:600}
+.formula{background:#F4F2EC;border-radius:8px;padding:8px 10px;font-family:Consolas,Menlo,monospace;font-size:13px;margin:6px 0}
+footer{max-width:1280px;margin:0 auto;padding:0 16px 24px;color:var(--muted);font-size:12px}
+@media (max-width:640px){
+  .prod,.prod tbody{display:block}
+  .prod thead{display:none}
+  .prod tr.main{display:grid;grid-template-columns:minmax(0,1fr) auto auto 30px;gap:6px;align-items:center;padding-top:10px;border-top:1px solid #E2DED3}
+  .prod tr.main td{padding:0;border:none}
+  .prod tr.main td:first-child{grid-column:1/-1}
+  .prod tr.main td:nth-child(2) input{width:86px}
+  .prod tr[data-c]{display:block}
+  .prod tr[data-c] td{display:block;padding:4px 0 8px}
+}
+@media print{.noprint{display:none}.sticky{position:static}.grid{grid-template-columns:1fr}body{background:#fff}}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <h1>Calculadora de soluciones nutritivas y soluciones madre</h1>
+  <p>Curso 3 · Nutrición mineral en sistemas hidropónicos · Diplomado en Hidroponía, UDLA</p>
+</div></header>
+
+<main>
+<div class="grid">
+<div>
+  <section class="card">
+    <h2><span class="n">1</span>Agua de riego</h2>
+    <p class="hint">Valores del informe de laboratorio en mg/L (bicarbonato como HCO₃⁻; nitrato como N‑NO₃). Debajo de cada casilla aparece el valor en mmol/L (µmol/L en los micronutrientes).</p>
+    <div class="row" style="margin-bottom:10px">
+      <div><label for="waterPreset">Agua</label>
+        <select id="waterPreset">
+          <option value="pozo">Pozo del caso (sesión 2)</option>
+          <option value="ro">Ósmosis inversa</option>
+          <option value="red">Agua de la red (sesión 2)</option>
+          <option value="costa">Pozo costero (sesión 2)</option>
+          <option value="custom">Personalizada</option>
+        </select></div>
+    </div>
+    <div class="water" id="waterBox"></div>
+  </section>
+
+  <section class="card">
+    <h2><span class="n">2</span>Productos y tanque de cada uno</h2>
+    <p class="hint">Cantidad por cada 1000 L de solución final. Sales y quelatos en gramos; ácidos e hidróxido de potasio en mL. Elige el tanque madre de cada producto, o «Directo» si va sin diluir previamente al tanque de 1000 L. Un mismo producto puede ir repartido en dos tanques.</p>
+    <div class="presets noprint">
+      <button class="btn" data-preset="caso">Receta del caso (pozo)</button>
+      <button class="btn" data-preset="ro">Receta con ósmosis inversa</button>
+      <button class="btn" data-preset="errores">Ejemplo con errores</button>
+      <button class="btn" data-preset="vacio">Vaciar</button>
+    </div>
+    <div class="scroll">
+    <table class="prod" id="prodTable">
+      <thead><tr><th style="width:52%">Producto</th><th class="r" style="width:16%">Cantidad</th><th style="width:10%"></th><th style="width:16%">Tanque</th><th style="width:6%"></th></tr></thead>
+      <tbody id="prodBody"></tbody>
+    </table>
+    </div>
+    <div class="row noprint" style="margin-top:10px"><button class="btn solid" id="addBtn">+ Agregar producto</button></div>
+  </section>
+
+  <section class="card">
+    <h2><span class="n">3</span>Soluciones madre y referencia</h2>
+    <div class="row">
+      <div><label for="factor">Factor de concentración (×)</label><input id="factor" class="num" inputmode="decimal" value="100" style="width:110px"></div>
+      <div><label for="vol">Volumen de cada tanque (L)</label><input id="vol" class="num" inputmode="decimal" value="100" style="width:110px"></div>
+      <div><label for="cons">Consumo de solución (L/día)</label><input id="cons" class="num" inputmode="decimal" value="400" style="width:110px"></div>
+      <div><label for="temp">Temperatura más baja del tanque</label>
+        <select id="temp"><option value="0">Fría, cerca de 0 °C</option><option value="20">Templada, 20 °C</option></select></div>
+      <div><label for="ref">Solución de referencia</label>
+        <select id="ref">
+          <option value="cornell">Lechuga de Cornell</option>
+          <option value="tomo">Tomate holandés, sistema abierto</option>
+          <option value="tomc">Tomate holandés, sistema cerrado</option>
+          <option value="none">Sin referencia</option>
+        </select></div>
+    </div>
+  </section>
+</div>
+
+<div class="sticky">
+  <section class="card">
+    <h2>Resultado en la solución final</h2>
+    <div class="tiles" id="tiles"></div>
+    <div class="counts" id="counts"></div>
+    <ul class="msgs" id="msgs"></ul>
+  </section>
+</div>
+</div>
+
+<section class="card">
+  <h2>Tanques madre: cuánto pesar y si se disuelve</h2>
+  <p class="hint" id="tankHint"></p>
+  <div class="tanks" id="tanks"></div>
+</section>
+
+<section class="card">
+  <h2>Concentración de cada ion en la solución final</h2>
+  <p class="hint">Agua + productos. La diferencia se compara con la solución de referencia: verde dentro de ±10 %, ámbar hasta ±25 %, rojo más allá. El sulfato tolera un rango más amplio (−25 a +50 % en verde) y el amonio es opcional: solo se marca si sobra.</p>
+  <div class="scroll"><table id="ionTable"></table></div>
+  <div class="scroll" style="margin-top:14px"><table id="microTable"></table></div>
+  <p class="hint" id="balance" style="margin-top:10px"></p>
+</section>
+
+<section class="card">
+  <h2>Cómo calcula</h2>
+  <details>
+    <summary>Fórmulas y supuestos</summary>
+    <p><b>Concentración de cada sal.</b> Para una sal sólida, los gramos por 1000 L divididos por su masa molar dan los mmol/L. Para un líquido: mmol/L = mL por 1000 L × mol/L del producto ÷ 1000, con mol/L = 10 × % × densidad ÷ masa molar.</p>
+    <div class="formula">mmol/L = g por 1000 L ÷ masa molar &nbsp;·&nbsp; mol/L (producto) = 10 × % × densidad ÷ M</div>
+    <p><b>CE estimada.</b> Regla de la sesión 1: la suma de los cationes en meq/L dividida por 10, incluidos los del agua.</p>
+    <div class="formula">CE (dS/m) ≈ (K⁺ + NH₄⁺ + Na⁺ + 2·Ca²⁺ + 2·Mg²⁺) ÷ 10</div>
+    <p><b>pH estimado.</b> Se resuelve la neutralidad eléctrica con los equilibrios del carbonato (pKa 6,35 y 10,33) y del fosfato (pKa 2,15; 7,20 y 12,35). El agua aporta su bicarbonato y su CO₂ (calculado con su pH); cada protón de ácido neutraliza un bicarbonato y lo convierte en CO₂. El pH «al preparar» supone que ese CO₂ sigue disuelto; el pH «si el CO₂ escapa» supone equilibrio con el aire. No incluye coeficientes de actividad ni la absorción de la planta, por eso es una estimación (±0,2–0,3 unidades).</p>
+    <div class="formula">neutralidad: Σ cationes fuertes − Σ aniones fuertes + H⁺ = HCO₃⁻ + 2·CO₃²⁻ + carga del fosfato + OH⁻</div>
+    <p><b>Soluciones madre.</b> Masa por tanque = g por 1000 L × factor × volumen del tanque ÷ 1000. Concentración en la madre (g/L) = g por 1000 L × factor ÷ 1000, que se compara con la solubilidad de la sal sola en agua pura; en mezcla y con frío disuelve menos. Autonomía = volumen del tanque × factor ÷ consumo diario.</p>
+    <p><b>Incompatibilidades.</b> En un mismo tanque concentrado no pueden ir calcio con sulfato (precipita yeso) ni calcio con fosfato; el quelato de hierro no va con ácido concentrado (bajo pH 3 pierde el hierro); las bases no van con ácidos ni con calcio o magnesio. Diluidos en el tanque de 1000 L todos conviven.</p>
+    <p><b>Fuentes.</b> Masas molares y reglas de las sesiones 1 a 4. Lechuga de Cornell: Brechner y Both (2013), CE 1,15–1,25 y pH 5,6–6,0 según Both (2003). Tomate: Sonneveld y Voogt (2009), en Stanghellini et al. (2024), tabla 13.1. Solubilidades: tabla de la sesión 4. Estabilidad de quelatos: sesión 3.</p>
+  </details>
+</section>
+</main>
+<footer>Herramienta didáctica del curso. Los resultados son estimaciones para aprender a calcular; antes de preparar en un cultivo real, mide CE y pH de la solución.</footer>
+
+<script>
+(function(){
+"use strict";
+// ---------------- datos ----------------
+var MM = {N:14.007,P:30.974,K:39.098,Ca:40.078,Mg:24.305,S:32.06,Na:22.990,Cl:35.45,B:10.81,Mn:54.938,Zn:65.38,Cu:63.546,Mo:95.95,Fe:55.845,HCO3:61.016,SO4:96.056};
+var PK = {c1:6.35,c2:10.33,p1:2.15,p2:7.20,p3:12.35,w:14};
+var CO2_AIR = 0.014; // mmol/L de CO2 disuelto en equilibrio con el aire
+// ion keys: Ca Mg K NH4 Na NO3 SO4 Cl P C(HCO3) MoO4
+var PRODUCTS = [
+ {g:'Macronutrientes', id:'CaN', name:'Nitrato de calcio (grado fertilizante)', f:'5Ca(NO₃)₂·NH₄NO₃·10H₂O', type:'s', mm:216.12, ions:{Ca:1,NO3:2.2,NH4:0.2}, flags:['Ca'], sol0:1050, sol20:1290},
+ {g:'Macronutrientes', id:'KNO3', name:'Nitrato de potasio', f:'KNO₃', type:'s', mm:101.10, ions:{K:1,NO3:1}, flags:[], sol0:133, sol20:316},
+ {g:'Macronutrientes', id:'MKP', name:'Fosfato monopotásico', f:'KH₂PO₄', type:'s', mm:136.08, ions:{K:1,P:1}, flags:['PO4'], sol0:null, sol20:208},
+ {g:'Macronutrientes', id:'MAP', name:'Fosfato monoamónico', f:'NH₄H₂PO₄', type:'s', mm:115.03, ions:{NH4:1,P:1}, flags:['PO4'], sol0:null, sol20:null},
+ {g:'Macronutrientes', id:'K2SO4', name:'Sulfato de potasio', f:'K₂SO₄', type:'s', mm:174.25, ions:{K:2,SO4:1}, flags:['SO4'], sol0:null, sol20:111},
+ {g:'Macronutrientes', id:'MgSO4', name:'Sulfato de magnesio', f:'MgSO₄·7H₂O', type:'s', mm:246.47, ions:{Mg:1,SO4:1}, flags:['SO4','Mg'], sol0:null, sol20:710},
+ {g:'Macronutrientes', id:'MgN', name:'Nitrato de magnesio', f:'Mg(NO₃)₂·6H₂O', type:'s', mm:256.40, ions:{Mg:1,NO3:2}, flags:['Mg'], sol0:null, sol20:null},
+ {g:'Macronutrientes', id:'NH4NO3', name:'Nitrato de amonio', f:'NH₄NO₃', type:'s', mm:80.04, ions:{NH4:1,NO3:1}, flags:[], sol0:null, sol20:null},
+ {g:'Quelatos de hierro', id:'FeDTPA', name:'Fe‑DTPA 10 %', f:'quelato, 10 % Fe', type:'s', fe:10, ions:{}, flags:['FE'], phmax:7.5, chel:'DTPA'},
+ {g:'Quelatos de hierro', id:'FeEDTA', name:'Fe‑EDTA 13 %', f:'quelato, 13 % Fe', type:'s', fe:13, ions:{}, flags:['FE'], phmax:6.5, chel:'EDTA'},
+ {g:'Quelatos de hierro', id:'FeEDDHA', name:'Fe‑EDDHA 6 %', f:'quelato, 6 % Fe', type:'s', fe:6, ions:{}, flags:['FE'], phmax:9, chel:'EDDHA'},
+ {g:'Micronutrientes', id:'MnSO4', name:'Sulfato de manganeso', f:'MnSO₄·H₂O', type:'s', mm:169.01, ions:{SO4:1}, micro:{Mn:1}, flags:['SO4']},
+ {g:'Micronutrientes', id:'ZnSO4', name:'Sulfato de zinc', f:'ZnSO₄·7H₂O', type:'s', mm:287.54, ions:{SO4:1}, micro:{Zn:1}, flags:['SO4']},
+ {g:'Micronutrientes', id:'H3BO3', name:'Ácido bórico', f:'H₃BO₃', type:'s', mm:61.83, ions:{}, micro:{B:1}, flags:[]},
+ {g:'Micronutrientes', id:'CuSO4', name:'Sulfato de cobre', f:'CuSO₄·5H₂O', type:'s', mm:249.68, ions:{SO4:1}, micro:{Cu:1}, flags:['SO4']},
+ {g:'Micronutrientes', id:'Na2MoO4', name:'Molibdato de sodio', f:'Na₂MoO₄·2H₂O', type:'s', mm:241.96, ions:{Na:2,MoO4:1}, micro:{Mo:1}, flags:[]},
+ {g:'Ácidos', id:'HNO3', name:'Ácido nítrico 65 %', f:'HNO₃, 1,39 g/cm³', type:'l', molL:14.34, ions:{NO3:1}, flags:['ACID'], hplus:1},
+ {g:'Ácidos', id:'H3PO4', name:'Ácido fosfórico 85 %', f:'H₃PO₄, 1,70 g/cm³', type:'l', molL:14.75, ions:{P:1}, flags:['ACID','PO4'], hplus:1},
+ {g:'Ácidos', id:'H2SO4', name:'Ácido sulfúrico 96 %', f:'H₂SO₄, 1,84 g/cm³', type:'l', molL:18.01, ions:{SO4:1}, flags:['ACID','SO4'], hplus:2},
+ {g:'Bases', id:'KOH', name:'Hidróxido de potasio 45 %', f:'KOH, 1,45 g/cm³', type:'l', molL:11.63, ions:{K:1}, flags:['BASE'], ohm:1},
+ {g:'Bases', id:'KHCO3', name:'Bicarbonato de potasio', f:'KHCO₃', type:'s', mm:100.115, ions:{K:1,C:1}, flags:['BASE'], sol0:null, sol20:null}
+];
+var PBY = {}; PRODUCTS.forEach(function(p){PBY[p.id]=p;});
+
+var WATERS = {
+ pozo:{pH:7.6,Ca:60.1,Mg:18.2,Na:18.4,K:3.9,HCO3:213.6,Cl:35.5,SO4:43.2,NNO3:1.4,B:0.15,Mn:0.08,Zn:0.03,Cu:0.01},
+ ro:{pH:6.0,Ca:0,Mg:0,Na:0,K:0,HCO3:0,Cl:0,SO4:0,NNO3:0,B:0,Mn:0,Zn:0,Cu:0},
+ red:{pH:7.4,Ca:48.1,Mg:9.7,Na:25.3,K:2.0,HCO3:134.2,Cl:35.5,SO4:28.8,NNO3:4.2,B:0,Mn:0,Zn:0,Cu:0},
+ costa:{pH:8.0,Ca:80.2,Mg:36.5,Na:126.4,K:7.8,HCO3:305.1,Cl:159.5,SO4:134.5,NNO3:2.8,B:0.6,Mn:0.4,Zn:0,Cu:0}
+};
+var WFIELDS = [
+ ['pH','pH',null],['Ca','Ca²⁺',MM.Ca],['Mg','Mg²⁺',MM.Mg],['Na','Na⁺',MM.Na],['K','K⁺',MM.K],['HCO3','HCO₃⁻',MM.HCO3],
+ ['Cl','Cl⁻',MM.Cl],['SO4','SO₄²⁻',MM.SO4],['NNO3','N‑NO₃',MM.N],['B','B',MM.B],['Mn','Mn',MM.Mn],['Zn','Zn',MM.Zn],['Cu','Cu',MM.Cu]
+];
+var REFS = {
+ cornell:{name:'Lechuga de Cornell', ions:{NO3:8.7,NH4:0.2,P:1.0,K:5.5,Ca:2.1,Mg:1.0,SO4:1.1}, micro:{Fe:16.8,Mn:2.5,B:15.0,Cu:0.4,Zn:2.0,Mo:0.3}, ce:[1.15,1.25], ph:[5.6,6.0]},
+ tomo:{name:'Tomate holandés, abierto', ions:{NO3:15.5,NH4:1.5,P:1.5,K:7.75,Ca:5.5,Mg:2.5,SO4:3.5}, micro:null, ph:[5.5,6.5]},
+ tomc:{name:'Tomate holandés, cerrado', ions:{NO3:12.5,NH4:1.1,P:1.2,K:7.0,Ca:4.5,Mg:1.5,SO4:2.5}, micro:null, ph:[5.5,6.5]},
+ none:null
+};
+var IONS = [['NO3','NO₃⁻',-1,'nitrato'],['NH4','NH₄⁺',1,'amonio'],['P','H₂PO₄⁻ (P total)',-1,'fósforo'],['K','K⁺',1,'potasio'],['Ca','Ca²⁺',2,'calcio'],['Mg','Mg²⁺',2,'magnesio'],['SO4','SO₄²⁻',-2,'azufre'],['Na','Na⁺',1,'sodio'],['Cl','Cl⁻',-1,'cloruro']];
+var MICROS = [['Fe','Fe'],['Mn','Mn'],['Zn','Zn'],['B','B'],['Cu','Cu'],['Mo','Mo']];
+
+var PRESETS = {
+ caso:{water:'pozo', ref:'cornell', rows:[['CaN',130,'A'],['KNO3',267,'A'],['FeDTPA',9.4,'A'],['KNO3',267,'B'],['MgSO4',62,'B'],['K2SO4',11,'B'],
+   ['MnSO4',0.18,'B'],['ZnSO4',0.44,'B'],['H3BO3',0.07,'B'],['CuSO4',0.06,'B'],['Na2MoO4',0.07,'B'],['H3PO4',68,'B'],['HNO3',140,'C']]},
+ ro:{water:'ro', ref:'cornell', rows:[['CaN',454,'A'],['KNO3',206,'A'],['FeDTPA',9.4,'A'],['KNO3',206,'B'],['MKP',136,'B'],['MgSO4',246,'B'],['K2SO4',37,'B'],
+   ['MnSO4',0.42,'B'],['ZnSO4',0.58,'B'],['H3BO3',0.93,'B'],['CuSO4',0.10,'B'],['Na2MoO4',0.07,'B'],['KHCO3',50,'D']]},
+ errores:{water:'pozo', ref:'cornell', rows:[['CaN',130,'A'],['MgSO4',62,'A'],['FeDTPA',9.4,'B'],['H3PO4',68,'A'],['KNO3',534,'B'],['K2SO4',11,'B'],['HNO3',140,'B']]},
+ vacio:{rows:[]}
+};
+
+// ---------------- utilidades ----------------
+function num(s){ if(s===null||s===undefined) return NaN; s=String(s).trim().replace(/\s/g,'').replace(',', '.'); if(s==='') return 0; return Number(s); }
+function fmt(x,d){ if(!isFinite(x)) return '—'; var v=x.toFixed(d); if(v==='-0'||/^-0[.,]0*$/.test(v)) v=v.slice(1); return v.replace('.',',').replace('-','−'); }
+function auto(x){ var a=Math.abs(x); if(a===0) return '0'; if(a>=100) return fmt(x,0); if(a>=10) return fmt(x,1); if(a>=1) return fmt(x,2); if(a>=0.1) return fmt(x,2); if(a>=0.01) return fmt(x,3); return fmt(x,4); }
+function el(id){ return document.getElementById(id); }
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+
+// ---------------- estado ----------------
+var rows = []; // {id, q, t}
+var rowSeq = 0;
+
+function buildWater(){
+  var h='';
+  WFIELDS.forEach(function(f){
+    h+='<div><label for="w_'+f[0]+'">'+f[1]+(f[0]==='pH'?'':' (mg/L)')+'</label><input class="num" id="w_'+f[0]+'" inputmode="decimal" data-w="'+f[0]+'"><small id="wm_'+f[0]+'"></small></div>';
+  });
+  el('waterBox').innerHTML=h;
+  el('waterBox').addEventListener('input', function(){ el('waterPreset').value='custom'; update(); });
+}
+function setWater(key){
+  var w=WATERS[key]; if(!w) return;
+  WFIELDS.forEach(function(f){ el('w_'+f[0]).value=fmt(w[f[0]], f[0]==='pH'?1:(w[f[0]]<1&&w[f[0]]>0?2:1)).replace(/,0$/,''); });
+}
+function optionsHtml(sel){
+  var h='', g='';
+  PRODUCTS.forEach(function(p){
+    if(p.g!==g){ if(g) h+='</optgroup>'; h+='<optgroup label="'+p.g+'">'; g=p.g; }
+    h+='<option value="'+p.id+'"'+(p.id===sel?' selected':'')+'>'+esc(p.name)+' · '+esc(p.f)+'</option>';
+  });
+  return h+'</optgroup>';
+}
+function addRow(id,q,t){ rows.push({k:++rowSeq,id:id||'KNO3',q:(q===undefined?'':String(q).replace('.',',')),t:t||'A'}); }
+function renderRows(){
+  var h='';
+  rows.forEach(function(r){
+    var p=PBY[r.id];
+    h+='<tr class="main" data-k="'+r.k+'"><td><select class="p" data-f="id">'+optionsHtml(r.id)+'</select></td>'+
+       '<td><input class="num" data-f="q" inputmode="decimal" value="'+esc(r.q)+'" aria-label="Cantidad"></td>'+
+       '<td class="unit">'+(p.type==='l'?'mL':'g')+' /1000 L</td>'+
+       '<td><select class="tk '+r.t+'" data-f="t">'+['A','B','C','D'].map(function(x){return '<option value="'+x+'"'+(x===r.t?' selected':'')+'>'+(x==='D'?'Directo':'Tanque '+x)+'</option>';}).join('')+'</select></td>'+
+       '<td><button class="btn x noprint" data-f="del" title="Quitar">×</button></td></tr>'+
+       '<tr data-c="'+r.k+'"><td colspan="5" class="contrib" id="c_'+r.k+'"></td></tr>';
+  });
+  if(!rows.length) h='<tr><td colspan="5" class="hint" style="padding:14px 4px">No hay productos. Agrega uno o carga una receta.</td></tr>';
+  el('prodBody').innerHTML=h;
+}
+el('prodBody').addEventListener('input', function(e){
+  var tr=e.target.closest('tr'); if(!tr||!tr.dataset.k) return;
+  var r=rows.filter(function(x){return x.k==tr.dataset.k;})[0]; var f=e.target.dataset.f;
+  if(f==='q'){ r.q=e.target.value; update(); }
+});
+el('prodBody').addEventListener('change', function(e){
+  var tr=e.target.closest('tr'); if(!tr||!tr.dataset.k) return;
+  var r=rows.filter(function(x){return x.k==tr.dataset.k;})[0]; var f=e.target.dataset.f;
+  if(f==='id'){ r.id=e.target.value; renderRows(); update(); }
+  if(f==='t'){ r.t=e.target.value; e.target.className='tk '+r.t; update(); }
+});
+el('prodBody').addEventListener('click', function(e){
+  if(e.target.dataset.f!=='del') return;
+  var tr=e.target.closest('tr'); rows=rows.filter(function(x){return x.k!=tr.dataset.k;}); renderRows(); update();
+});
+el('addBtn').addEventListener('click', function(){ addRow('KNO3','', 'A'); renderRows(); update();
+  var ins=el('prodBody').querySelectorAll('input[data-f="q"]'); if(ins.length) ins[ins.length-1].focus(); });
+document.querySelectorAll('[data-preset]').forEach(function(b){ b.addEventListener('click', function(){ loadPreset(b.dataset.preset); }); });
+el('waterPreset').addEventListener('change', function(){ if(this.value!=='custom') setWater(this.value); update(); });
+['factor','vol','cons'].forEach(function(id){ el(id).addEventListener('input', update); });
+['temp','ref'].forEach(function(id){ el(id).addEventListener('change', update); });
+
+function loadPreset(k){
+  var p=PRESETS[k]; rows=[];
+  p.rows.forEach(function(r){ addRow(r[0], r[1], r[2]); });
+  if(p.water){ el('waterPreset').value=p.water; setWater(p.water); }
+  if(p.ref) el('ref').value=p.ref;
+  renderRows(); update();
+}
+
+// ---------------- química ----------------
+function phSolve(sid, ct, pt, open){
+  // sid, ct, pt en mmol/L; devuelve pH y especies
+  function f(pH){
+    var H=Math.pow(10,-pH)*1000, OH=Math.pow(10,pH-PK.w)*1000, h=Math.pow(10,-pH);
+    var hco3, co3;
+    if(open){ hco3=CO2_AIR*Math.pow(10,pH-PK.c1); co3=hco3*Math.pow(10,pH-PK.c2); }
+    else { var k1=Math.pow(10,-PK.c1), k2=Math.pow(10,-PK.c2), d=h*h+h*k1+k1*k2; hco3=ct*h*k1/d; co3=ct*k1*k2/d; }
+    var a1=Math.pow(10,-PK.p1), a2=Math.pow(10,-PK.p2), a3=Math.pow(10,-PK.p3), dp=h*h*h+h*h*a1+h*a1*a2+a1*a2*a3;
+    var pc=pt*(h*h*a1+2*h*a1*a2+3*a1*a2*a3)/dp;
+    return {res:sid+H-OH-hco3-2*co3-pc, hco3:hco3, co3:co3, pc:pc, H:H, OH:OH};
+  }
+  var lo=0, hi=14;
+  for(var i=0;i<80;i++){ var m=(lo+hi)/2; if(f(m).res>0) lo=m; else hi=m; }
+  var pH=(lo+hi)/2, s=f(pH); s.pH=pH; return s;
+}
+
+function compute(){
+  var out={errors:[],warns:[],infos:[],oks:[],bad:{}};
+  // agua
+  var W={}; var wBad=false;
+  WFIELDS.forEach(function(f){ var v=num(el('w_'+f[0]).value); var bad=!isFinite(v)||v<0||(f[0]==='pH'&&(v<3||v>11)&&el('w_'+f[0]).value.trim()!=='');
+    el('w_'+f[0]).classList.toggle('bad',bad); if(bad){wBad=true;v=0;} W[f[0]]=v;
+    el('wm_'+f[0]).textContent = f[2] ? fmt(v/f[2]*(f[0]==='B'||f[0]==='Mn'||f[0]==='Zn'||f[0]==='Cu'?1000:1), (f[0]==='B'||f[0]==='Mn'||f[0]==='Zn'||f[0]==='Cu')?1:2)+((f[0]==='B'||f[0]==='Mn'||f[0]==='Zn'||f[0]==='Cu')?' µmol/L':' mmol/L') : ''; });
+  if(!W.pH) W.pH=7;
+  var wm={Ca:W.Ca/MM.Ca, Mg:W.Mg/MM.Mg, Na:W.Na/MM.Na, K:W.K/MM.K, HCO3:W.HCO3/MM.HCO3, Cl:W.Cl/MM.Cl, SO4:W.SO4/MM.SO4, NO3:W.NNO3/MM.N};
+  var wmic={B:W.B/MM.B*1000, Mn:W.Mn/MM.Mn*1000, Zn:W.Zn/MM.Zn*1000, Cu:W.Cu/MM.Cu*1000, Fe:0, Mo:0};
+  if(wBad) out.errors.push('Revisa los valores del agua marcados en rojo: deben ser números positivos (pH entre 3 y 11).');
+  // productos
+  var F={Ca:0,Mg:0,K:0,NH4:0,Na:0,NO3:0,SO4:0,Cl:0,P:0,C:0,MoO4:0}, mic={Fe:0,Mn:0,Zn:0,B:0,Cu:0,Mo:0};
+  var acidH=0, tanks={A:[],B:[],C:[],D:[]}, chelates=[];
+  rows.forEach(function(r){
+    var p=PBY[r.id], q=num(r.q), inp=document.querySelector('tr[data-k="'+r.k+'"] input[data-f="q"]');
+    var bad=!isFinite(q)||q<0; if(inp) inp.classList.toggle('bad',bad);
+    var c=el('c_'+r.k);
+    if(bad){ out.errors.push('La cantidad de <b>'+esc(p.name)+'</b> no es un número válido.'); if(c) c.textContent=''; return; }
+    var mmol=0, parts=[];
+    if(p.fe){ var um=q*p.fe/100/MM.Fe*1000; mic.Fe+=um; parts.push(fmt(um,1)+' µmol/L de Fe'); chelates.push(p); }
+    else {
+      mmol = p.type==='l' ? q*p.molL/1000 : q/p.mm;
+      Object.keys(p.ions).forEach(function(k){ F[k]+=p.ions[k]*mmol; });
+      if(p.micro){ Object.keys(p.micro).forEach(function(k){ mic[k]+=p.micro[k]*mmol*1000; parts.push(fmt(p.micro[k]*mmol*1000,2)+' µmol/L de '+k); }); }
+      else {
+        var lab={Ca:'Ca²⁺',Mg:'Mg²⁺',K:'K⁺',NH4:'NH₄⁺',Na:'Na⁺',NO3:'NO₃⁻',SO4:'SO₄²⁻',Cl:'Cl⁻',P:'H₂PO₄⁻',C:'HCO₃⁻'};
+        Object.keys(p.ions).forEach(function(k){ if(lab[k]) parts.push(auto(p.ions[k]*mmol)+' '+lab[k]); });
+        if(p.hplus) { acidH+=p.hplus*mmol; parts.push(auto(p.hplus*mmol)+' mmol/L de H⁺'+(p.id==='H3PO4'?' (1 por mol a pH 5,5–6)':'')); }
+        if(p.ohm) parts.push(auto(mmol)+' mmol/L de OH⁻');
+      }
+    }
+    if(c) c.textContent = q>0 ? 'Aporta '+parts.join(' · ') + (p.mm||p.molL ? '  ('+auto(mmol)+' mmol/L de producto)' : '') : '';
+    tanks[r.t].push({p:p,q:q,mmol:mmol});
+  });
+  // totales
+  var T={NO3:wm.NO3+F.NO3, NH4:F.NH4, P:F.P, K:wm.K+F.K, Ca:wm.Ca+F.Ca, Mg:wm.Mg+F.Mg, SO4:wm.SO4+F.SO4, Na:wm.Na+F.Na, Cl:wm.Cl+F.Cl};
+  var Mi={}; MICROS.forEach(function(m){ Mi[m[0]]=wmic[m[0]]+mic[m[0]]; });
+  // pH
+  var h=Math.pow(10,-W.pH);
+  var co2w=wm.HCO3*Math.pow(10,PK.c1-W.pH), co3w=wm.HCO3*Math.pow(10,W.pH-PK.c2);
+  var sidw=wm.HCO3+2*co3w+(Math.pow(10,W.pH-PK.w)-h)*1000;
+  var sid=sidw + F.K+F.NH4+F.Na+2*F.Ca+2*F.Mg - F.NO3-2*F.SO4-F.Cl-2*F.MoO4;
+  var ct=wm.HCO3+co2w+co3w+F.C;
+  var S=phSolve(sid,ct,F.P,false), So=phSolve(sid,ct,F.P,true);
+  var cat=T.K+T.NH4+T.Na+2*T.Ca+2*T.Mg;
+  var catH=cat+S.H;
+  var an=T.NO3+T.Cl+2*T.SO4+S.pc+S.hco3+2*S.co3+2*F.MoO4;
+  var CE=cat/10;
+  return {catH:catH,W:W,wm:wm,wmic:wmic,F:F,T:T,Mi:Mi,S:S,So:So,CE:CE,cat:cat,an:an,tanks:tanks,chelates:chelates,acidH:acidH,out:out};
+}
+
+// ---------------- reglas y salida ----------------
+function rules(R){
+  var o=R.out, ref=REFS[el('ref').value];
+  var names=function(list){ return list.map(function(x){return '<b>'+esc(x.p.name)+'</b>';}).filter(function(v,i,a){return a.indexOf(v)===i;}).join(' y '); };
+  var has=function(list,flag){ return list.filter(function(x){return x.q>0 && x.p.flags.indexOf(flag)>=0;}); };
+  var tankState={};
+  ['A','B','C'].forEach(function(t){
+    var L=R.tanks[t], e=[];
+    var ca=has(L,'Ca'), so4=has(L,'SO4'), po4=has(L,'PO4'), fe=has(L,'FE'), ac=has(L,'ACID'), ba=has(L,'BASE'), mg=has(L,'Mg');
+    if(ca.length&&so4.length) e.push('Tanque '+t+': '+names(ca)+' con '+names(so4)+'. El calcio y el sulfato concentrados forman yeso (CaSO₄·2H₂O), que precipita. El calcio va en un tanque y los sulfatos en otro.');
+    if(ca.length&&po4.length) e.push('Tanque '+t+': '+names(ca)+' con '+names(po4)+'. Precipita fosfato de calcio. El calcio y los fosfatos van en tanques distintos.');
+    if(fe.length&&ac.length) e.push('Tanque '+t+': '+names(fe)+' con '+names(ac)+'. Con el ácido concentrado el pH baja de 3 y el quelato pierde el hierro. El ácido va en otro tanque.');
+    if(ba.length&&ac.length) e.push('Tanque '+t+': '+names(ba)+' con '+names(ac)+'. El ácido y la base se neutralizan en el tanque y ninguno cumple su función.');
+    var cm=ca.concat(mg); if(ba.length&&cm.length) e.push('Tanque '+t+': '+names(ba)+' con '+names(cm)+'. Con la base precipitan carbonato o hidróxido de calcio y magnesio.');
+    e.forEach(function(m){ o.errors.push(m); });
+    tankState[t]=e.length;
+  });
+  // solubilidad y volumen
+  var Fc=num(el('factor').value), V=num(el('vol').value), C=num(el('cons').value), temp=el('temp').value;
+  var mOK=isFinite(Fc)&&Fc>=1&&isFinite(V)&&V>0&&isFinite(C)&&C>0;
+  el('factor').classList.toggle('bad',!(isFinite(Fc)&&Fc>=1)); el('vol').classList.toggle('bad',!(isFinite(V)&&V>0)); el('cons').classList.toggle('bad',!(isFinite(C)&&C>0));
+  if(!mOK) o.errors.push('Revisa el factor (1 o más), el volumen de los tanques y el consumo diario.');
+  R.solub={};
+  if(mOK) ['A','B','C'].forEach(function(t){
+    var agg={}, liq=0;
+    R.tanks[t].forEach(function(x){ if(x.p.type==='s'){ agg[x.p.id]=(agg[x.p.id]||0)+x.q; } else liq+=x.q*Fc*V/1000/1000; });
+    Object.keys(agg).forEach(function(id){
+      var p=PBY[id], gL=agg[id]*Fc/1000, sol= temp==='0' ? (p.sol0!=null?p.sol0:p.sol20) : p.sol20, pct= sol? 100*gL/sol : null;
+      R.solub[t+id]={gL:gL,pct:pct,sol:sol,at20:temp==='0'&&p.sol0==null&&p.sol20!=null};
+      if(pct!=null&&pct>=100){ o.errors.push('Tanque '+t+': <b>'+esc(p.name)+'</b> a '+fmt(gL,1)+' g/L supera su solubilidad ('+sol+' g/L'+(temp==='0'?' en frío':' a 20 °C')+'). No se disuelve: baja el factor o reparte la sal en dos tanques.'); tankState[t]++; }
+      else if(pct!=null&&pct>=60) o.warns.push('Tanque '+t+': <b>'+esc(p.name)+'</b> llega al '+fmt(pct,0)+' % de su solubilidad'+(temp==='0'?' en frío':'')+'. En mezcla con otras sales y con frío puede cristalizar.');
+    });
+    if(liq>V) { o.errors.push('Tanque '+t+': los líquidos suman '+fmt(liq,1)+' L y no caben en un tanque de '+fmt(V,0)+' L.'); tankState[t]++; }
+  });
+  R.tankState=tankState; R.mOK=mOK; R.Fc=Fc; R.V=V; R.C=C;
+  // CE
+  var ceRef = ref ? (ref.ce || [0.9*refCE(ref),1.1*refCE(ref)]) : null;
+  R.ceRef=ceRef;
+  var anyP=rows.some(function(r){return num(r.q)>0;});
+  if(R.CE<0.05||!anyP){ R.ceState='info'; if(!anyP) o.infos.push('Agrega productos o carga una receta: por ahora los valores son los del agua sola.'); }
+  else if(ceRef){
+    if(R.CE<ceRef[0]*0.9){ R.ceState='warn'; o.warns.push('<b>CE '+fmt(R.CE,2)+' dS/m</b>, más baja que la referencia ('+fmt(ceRef[0],2)+'–'+fmt(ceRef[1],2)+'). Solución diluida: riesgo de deficiencias y menor crecimiento.'); }
+    else if(R.CE>ceRef[1]*1.5){ R.ceState='err'; o.errors.push('<b>CE '+fmt(R.CE,2)+' dS/m</b>, muy por encima de la referencia ('+fmt(ceRef[0],2)+'–'+fmt(ceRef[1],2)+'). La planta absorbe menos agua (estrés salino): menor crecimiento y, en lechuga, más riesgo de tipburn.'); }
+    else if(R.CE>ceRef[1]*1.1){ R.ceState='warn'; o.warns.push('<b>CE '+fmt(R.CE,2)+' dS/m</b>, sobre la referencia ('+fmt(ceRef[0],2)+'–'+fmt(ceRef[1],2)+'). Más sal de la necesaria: gasto de fertilizante y riesgo de estrés salino.'); }
+    else { R.ceState='ok'; o.oks.push('CE '+fmt(R.CE,2)+' dS/m, dentro del rango de la referencia.'); }
+  } else R.ceState='info';
+  // pH
+  var pH=Math.round(R.S.pH*10)/10, rng= ref&&ref.ph ? ref.ph : [5.5,6.5];
+  var anyProd=rows.some(function(r){return num(r.q)>0;});
+  if(!anyProd){ R.phState='info'; }
+  else if(pH<4.5){ R.phState='err'; o.errors.push('<b>pH '+fmt(pH,1)+'</b>: demasiado ácido: daña las raíces. Sobra ácido: baja la dosis.'); }
+  else if(pH<5.5){ R.phState='warn'; o.warns.push('<b>pH '+fmt(pH,1)+'</b>: algo ácido. Baja la absorción de calcio y magnesio y la solución queda sin reserva de bicarbonato. Revisa la dosis de ácido.'); }
+  else if(pH<=6.5){ R.phState='ok'; o.oks.push('pH '+fmt(pH,1)+': en el rango en que todos los nutrientes están disponibles (5,5–6,5'+(ref&&ref.ph&&ref.ph[0]!==5.5?'; '+esc(ref.name)+': '+fmt(ref.ph[0],1)+'–'+fmt(ref.ph[1],1):'')+').'); }
+  else if(pH<=7.0){ R.phState='warn'; o.warns.push('<b>pH '+fmt(pH,1)+'</b>: el hierro, el manganeso y el fósforo empiezan a estar menos disponibles. '+highCause(R)); }
+  else { R.phState='err'; o.errors.push('<b>pH '+fmt(pH,1)+'</b>: riesgo de precipitar fosfato de calcio y de clorosis por hierro. '+highCause(R)); }
+  // reserva
+  var hc=R.S.hco3;
+  if(anyProd && R.wm.HCO3>0.05){
+    if(hc<0.2 && pH<5.5) o.warns.push('Reserva de bicarbonato '+fmt(hc,2)+' mmol/L: se neutralizó casi todo. Sin reserva el pH queda sin amortiguar. La sesión 2 deja unos 0,5 mmol/L.');
+    else if(hc>1.2) o.warns.push('Quedan '+fmt(hc,2)+' mmol/L de bicarbonato: el pH tenderá a subir. La sesión 2 deja unos 0,5 mmol/L.');
+  }
+  if(anyProd && R.wm.HCO3<=0.05 && R.F.C<=0.05 && R.F.P>0 && pH<5.5) o.infos.push('Agua sin bicarbonato: el fosfato fija el pH cerca de '+fmt(pH,1)+'. Con ósmosis inversa, la sesión 2 agrega unos 0,5 mmol/L de bicarbonato de potasio (50 g por 1000 L).');
+  if(anyProd && R.So.pH-pH>0.6) o.infos.push('Si el CO₂ formado al neutralizar escapa (tanque muy aireado), el pH podría subir hasta cerca de '+fmt(R.So.pH,1)+'. Por eso el pH se mide y se corrige cada día.');
+  // quelatos
+  R.chelates.forEach(function(p){
+    if(pH>p.phmax) o.warns.push('<b>'+esc(p.name)+'</b> mantiene el hierro hasta pH '+fmt(p.phmax,1)+' y la solución queda en '+fmt(pH,1)+'. Usa un quelato más estable o baja el pH.');
+  });
+  if(anyProd && R.Mi.Fe<0.5) o.warns.push('La receta no tiene hierro. Agrega un quelato de hierro (Fe‑DTPA en el caso).');
+  // iones vs referencia
+  if(ref && anyProd){
+    IONS.forEach(function(io){ var r=ref.ions[io[0]]; if(r==null||io[0]==='NH4') return; var v=R.T[io[0]], d=(v-r)/r;
+      if(io[0]==='SO4'){ if(d<-0.5) o.warns.push('<b>'+io[1]+'</b> '+fmt(v,2)+' mmol/L frente a '+fmt(r,2)+' de la referencia: riesgo de deficiencia de azufre.'); else if(d>1) o.warns.push('<b>'+io[1]+'</b> '+fmt(v,2)+' mmol/L frente a '+fmt(r,2)+' de la referencia: el sulfato sobra y sube la CE sin aportar.'); return; }
+      if(d<-0.25) o.warns.push('<b>'+io[1]+'</b> '+fmt(v,2)+' mmol/L frente a '+fmt(r,2)+' de la referencia: riesgo de deficiencia de '+io[3]+'.');
+      else if(d>0.25) o.warns.push('<b>'+io[1]+'</b> '+fmt(v,2)+' mmol/L frente a '+fmt(r,2)+' de la referencia: exceso de '+io[3]+'.'); });
+    if(ref.micro) MICROS.forEach(function(m){ var r=ref.micro[m[0]], v=R.Mi[m[0]], d=(v-r)/r;
+      if(m[0]==='Fe') return;
+      if(d<-0.25) o.warns.push('<b>'+m[1]+'</b> '+fmt(v,2)+' µmol/L frente a '+fmt(r,1)+' de la referencia: bajo.');
+      else if(d>0.5) o.warns.push('<b>'+m[1]+'</b> '+fmt(v,2)+' µmol/L frente a '+fmt(r,1)+' de la referencia: alto; los micronutrientes tienen un margen estrecho entre suficiencia y toxicidad.'); });
+  }
+  var Nt=R.T.NO3+R.T.NH4;
+  if(Nt>0 && R.T.NH4/Nt>0.15) o.warns.push('El amonio es el '+fmt(100*R.T.NH4/Nt,0)+' % del nitrógeno. Con mucho amonio la raíz acidifica el medio y el amonio compite con el potasio y el calcio.');
+  if(R.wm.Na>3||R.wm.Cl>3) o.warns.push('El agua trae '+fmt(R.wm.Na,1)+' mmol/L de Na⁺ y '+fmt(R.wm.Cl,1)+' de Cl⁻. Sobre 3 mmol/L ya excede el límite para sistema abierto con drenaje (sesión 2); en sistema cerrado se acumula.');
+  var bal=100*(R.catH-R.an)/((R.catH+R.an)||1);
+  R.bal=bal;
+  if(R.cat+R.an>1 && Math.abs(bal)>10) o.warns.push('Cationes y aniones difieren '+fmt(Math.abs(bal),0)+' %: revisa el análisis del agua (la neutralidad pide que cuadren).');
+}
+function devClass(k,d){ // d en %
+  if(k==='NH4') return d>0&&d>100?'warn':'';
+  if(k==='SO4') return (d>=-25&&d<=50)?'ok':((d>=-50&&d<=100)?'warn':'err');
+  var a=Math.abs(d); return a<=10?'ok':(a<=25?'warn':'err');
+}
+function highCause(R){
+  var base=R.F.C+R.tanks.A.concat(R.tanks.B,R.tanks.C,R.tanks.D).filter(function(x){return x.p.id==='KOH';}).reduce(function(a,x){return a+x.mmol;},0);
+  if(R.wm.HCO3<1 && base>0) return 'La base agregada (bicarbonato o hidróxido de potasio) es más de la necesaria: bájala.';
+  return 'Falta ácido para neutralizar el bicarbonato del agua.';
+}
+function refCE(ref){ var i=ref.ions; return (i.K+i.NH4+2*i.Ca+2*i.Mg)/10; }
+
+function tileHtml(k,v,unit,sub,state){
+  return '<div class="tile '+(state||'')+'"><div class="k">'+k+'</div><div class="v">'+v+(unit?' <small>'+unit+'</small>':'')+'</div><div class="s">'+sub+'</div></div>';
+}
+function render(R){
+  var o=R.out, ref=REFS[el('ref').value];
+  // tiles
+  var ceSub = R.ceRef ? 'Referencia: '+fmt(R.ceRef[0],2)+'–'+fmt(R.ceRef[1],2)+' dS/m' : 'Σ cationes ÷ 10';
+  var phSub = 'Si el CO₂ escapa: '+fmt(R.So.pH,1);
+  var auto_=R.mOK? R.V*R.Fc/R.C : NaN;
+  var t='';
+  t+=tileHtml('CE estimada', fmt(R.CE,2), 'dS/m', ceSub, R.ceState);
+  t+=tileHtml('pH al preparar', fmt(R.S.pH,1), '', phSub, R.phState);
+  t+=tileHtml('Bicarbonato que queda', fmt(R.S.hco3,2), 'mmol/L', 'Reserva sugerida: ≈ 0,5', (R.wm.HCO3>0.05||R.F.C>0)? (R.S.hco3>=0.2&&R.S.hco3<=1.2?'ok':'warn') : '');
+  t+=tileHtml('Autonomía de las madres', R.mOK? fmt(auto_,auto_<10?1:0):'—', 'días', R.mOK? 'Dosis: '+auto(1000/R.Fc)+' mL de cada madre por litro':'', '');
+  el('tiles').innerHTML=t;
+  // mensajes
+  var h=''; o.errors.forEach(function(m){h+='<li class="err">'+m+'</li>';}); o.warns.forEach(function(m){h+='<li class="warn">'+m+'</li>';});
+  o.infos.forEach(function(m){h+='<li class="info">'+m+'</li>';});
+  if(!o.errors.length && rows.some(function(r){return num(r.q)>0;})) h+='<li class="ok">Ningún tanque mezcla productos incompatibles.</li>';
+  o.oks.forEach(function(m){h+='<li class="ok">'+m+'</li>';});
+  el('msgs').innerHTML=h;
+  el('counts').innerHTML=(o.errors.length?'<span class="pill err">'+o.errors.length+(o.errors.length>1?' errores':' error')+'</span>':'<span class="pill ok">Sin errores</span>')+(o.warns.length?'<span class="pill warn">'+o.warns.length+(o.warns.length>1?' advertencias':' advertencia')+'</span>':'');
+  // tanques
+  var Fc=R.Fc, V=R.V, th='';
+  el('tankHint').textContent = R.mOK ? ('Factor '+fmt(Fc,0)+'× en tanques de '+fmt(V,0)+' L: cada madre rinde '+fmt(Fc*V,0)+' L de solución y se dosifica a '+auto(1000/Fc)+' mL por litro ('+auto(1000/Fc)+' L por cada 1000 L). Barra: porcentaje de la solubilidad de la sal sola'+(el('temp').value==='0'?' en frío (si no hay dato a 0 °C, se usa el de 20 °C)':' a 20 °C')+'.') : '';
+  ['A','B','C','D'].forEach(function(t){
+    var L=R.tanks[t].filter(function(x){return x.q>0;}); if(!L.length && t==='D') return;
+    th+='<div class="tank '+t+'"><h3>'+(t==='D'?'Directo al tanque de riego':'Tanque '+t)+'</h3><div class="sub">'+(t==='D'?'Cantidades por cada 1000 L de solución':(R.mOK?fmt(V,0)+' L a '+fmt(Fc,0)+'×':''))+'</div>';
+    if(!L.length) th+='<div class="hint">Vacío.</div>';
+    L.forEach(function(x){
+      var p=x.p, amt, d='';
+      if(t==='D'){ amt=(p.type==='l'? auto(x.q)+' mL':auto(x.q)+' g'); }
+      else if(R.mOK){
+        var a=x.q*Fc*V/1000; // g o mL
+        amt = p.type==='l' ? (a>=1000? fmt(a/1000,2)+' L' : auto(a)+' mL') : (a>=1000? fmt(a/1000,2)+' kg' : auto(a)+' g');
+        d = auto(x.q)+(p.type==='l'?' mL':' g')+' por 1000 L';
+        var s=R.solub[t+p.id];
+        if(s){ d+=' · '+fmt(s.gL, s.gL<1?2:1)+' g/L en la madre';
+          if(s.pct!=null){ var st=s.pct>=100?'err':(s.pct>=60?'warn':''); d+=' · '+fmt(s.pct,s.pct<10?1:0)+' % de la solubilidad'+(s.at20?' (dato a 20 °C)':'');
+            d+='<div class="bar '+st+'"><i style="width:'+Math.min(100,Math.max(1.5,s.pct))+'%"></i></div>'; }
+          else if(!p.micro && !p.fe) d+=' · sin dato de solubilidad'; }
+      } else amt='—';
+      th+='<div class="it"><div class="t"><span>'+esc(p.name)+'</span><span>'+amt+'</span></div><div class="d">'+d+'</div></div>';
+    });
+    if(t!=='D' && L.length) th+='<div class="state '+(R.tankState[t]?'err':'ok')+'">'+(R.tankState[t]?'Este tanque tiene un problema: revisa los mensajes.':'Compatible.')+'</div>';
+    th+='</div>';
+  });
+  el('tanks').innerHTML=th;
+  // iones
+  var ih='<thead><tr><th>Ion</th><th class="r">Agua</th><th class="r">Productos</th><th class="r">Total (mmol/L)</th><th class="r">meq/L</th><th class="r">Referencia</th><th class="r">Diferencia</th></tr></thead><tbody>';
+  IONS.forEach(function(io){
+    var k=io[0], w=(R.wm[k]||0), tot=R.T[k], f=tot-w, z=Math.abs(io[2]), r=ref?ref.ions[k]:null, dv='', cls='';
+    if(r!=null){ var d=(tot-r)/r*100; cls=devClass(k,d); dv='<span class="dev '+cls+'">'+(d>0?'+':'')+fmt(d,0)+' %</span>'; }
+    ih+='<tr><td><b>'+io[1]+'</b></td><td class="r">'+fmt(w,2)+'</td><td class="r">'+fmt(f,2)+'</td><td class="r"><b>'+fmt(tot,2)+'</b></td><td class="r">'+fmt(k==='P'?R.S.pc:tot*z,2)+'</td><td class="r">'+(r!=null?fmt(r,2):'—')+'</td><td class="r">'+(dv||'—')+'</td></tr>';
+  });
+  ih+='<tr><td><b>HCO₃⁻</b></td><td class="r">'+fmt(R.wm.HCO3,2)+'</td><td class="r"></td><td class="r"><b>'+fmt(R.S.hco3,2)+'</b></td><td class="r">'+fmt(R.S.hco3,2)+'</td><td class="r">≈ 0,5</td><td class="r">—</td></tr>';
+  el('ionTable').innerHTML=ih+'</tbody>';
+  var mh='<thead><tr><th>Micronutriente</th><th class="r">Agua (µmol/L)</th><th class="r">Total (µmol/L)</th><th class="r">mg/L</th><th class="r">Referencia (µmol/L)</th><th class="r">Diferencia</th></tr></thead><tbody>';
+  MICROS.forEach(function(m){
+    var k=m[0], tot=R.Mi[k], r=ref&&ref.micro?ref.micro[k]:null, dv='—';
+    if(r!=null){ var d=(tot-r)/r*100, cls=Math.abs(d)<=10?'ok':(Math.abs(d)<=25?'warn':'err'); dv='<span class="dev '+cls+'">'+(d>0?'+':'')+fmt(d,0)+' %</span>'; }
+    mh+='<tr><td><b>'+m[1]+'</b></td><td class="r">'+fmt(R.wmic[k],2)+'</td><td class="r"><b>'+fmt(tot,2)+'</b></td><td class="r">'+fmt(tot*MM[k]/1000,3)+'</td><td class="r">'+(r!=null?fmt(r,1):'—')+'</td><td class="r">'+dv+'</td></tr>';
+  });
+  el('microTable').innerHTML=mh+'</tbody>';
+  el('balance').innerHTML='Cationes '+fmt(R.catH,2)+' meq/L · aniones '+fmt(R.an,2)+' meq/L (con el fosfato y el bicarbonato al pH calculado) · diferencia '+fmt(Math.abs(R.bal),1)+' %. El hierro del agua no se cuenta: se oxida y precipita. '+(ref&&!ref.micro?'La referencia de tomate no incluye micronutrientes.':'');
+}
+
+function update(){
+  var R=compute(); rules(R); render(R); save();
+}
+function save(){ try{ localStorage.setItem('c3calc', JSON.stringify({rows:rows.map(function(r){return [r.id,r.q,r.t];}), w:el('waterPreset').value,
+  wv:WFIELDS.map(function(f){return el('w_'+f[0]).value;}), f:el('factor').value, v:el('vol').value, c:el('cons').value, t:el('temp').value, r:el('ref').value})); }catch(e){} }
+function restore(){ try{ var s=JSON.parse(localStorage.getItem('c3calc')||'null'); if(!s) return false;
+  rows=[]; s.rows.forEach(function(r){ if(PBY[r[0]]) addRow(r[0],r[1],r[2]); });
+  el('waterPreset').value=s.w; WFIELDS.forEach(function(f,i){ el('w_'+f[0]).value=s.wv[i]; });
+  el('factor').value=s.f; el('vol').value=s.v; el('cons').value=s.c; el('temp').value=s.t; el('ref').value=s.r; renderRows(); return true; }catch(e){ return false; } }
+
+buildWater();
+if(!restore()) loadPreset('caso'); else update();
+})();
+</script>
+</body>
+</html>
