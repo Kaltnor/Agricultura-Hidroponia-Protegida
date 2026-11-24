@@ -1,0 +1,640 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Invernadero del Módulo</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: escena 3D a la izquierda y cuaderno de estaciones a la derecha; en teléfono, escena arriba y cuaderno abajo. */
+:root {
+  --bg: #EDF1EE; --panel: #FFFFFF; --panel2: #F5F7F4; --ink: #1D2B26; --muted: #5C6A64; --line: #D3DCD7;
+  --dark: #174B3B; --accent: #2E7180; --orange: #B65A2A; --gold: #B98118; --red: #B74235; --water: #3F88A6;
+  --sky: #E4ECEA; --chip: #E5EEEA;
+  --f-display: "Barlow Condensed", "Arial Narrow", Arial, sans-serif;
+  --f-body: "Barlow", "Segoe UI", Arial, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0E1512; --panel: #16201C; --panel2: #1B2722; --ink: #E3ECE7; --muted: #9AABA3; --line: #2B3A34;
+  --dark: #8ED2B2; --accent: #6CB9C7; --orange: #E38D5D; --gold: #E2B24A; --red: #E57766; --water: #79B8D2;
+  --sky: #121C18; --chip: #22302A; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0E1512; --panel: #16201C; --panel2: #1B2722; --ink: #E3ECE7; --muted: #9AABA3; --line: #2B3A34;
+  --dark: #8ED2B2; --accent: #6CB9C7; --orange: #E38D5D; --gold: #E2B24A; --red: #E57766; --water: #79B8D2;
+  --sky: #121C18; --chip: #22302A; color-scheme: dark }
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.45; }
+* { box-sizing: border-box; }
+.app { height: 100%; display: grid; grid-template-rows: auto 1fr; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 12px; gap: 12px; }
+header { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 10px 24px; }
+.brand { min-width: 0; }
+.eyebrow { font-family: var(--f-mono); font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+h1 { font-family: var(--f-display); font-weight: 700; font-size: clamp(26px, 3.2vw, 38px); line-height: 1; margin: 2px 0 0; color: var(--dark); text-wrap: balance; }
+.views { display: flex; flex-wrap: wrap; gap: 6px; }
+button { font: inherit; color: inherit; }
+.btn { border: 1px solid var(--line); background: var(--panel); border-radius: 999px; padding: 6px 13px; font-size: 13.5px; font-weight: 500; cursor: pointer; }
+.btn:hover { border-color: var(--accent); }
+.btn[aria-pressed="true"] { background: var(--dark); border-color: var(--dark); color: var(--panel); }
+.btn:focus-visible, .tab:focus-visible, .item:focus-visible, .badge:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+main { min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 410px; gap: 12px; }
+.stage { position: relative; min-height: 0; border-radius: 14px; overflow: hidden; border: 1px solid var(--line); background: var(--sky); }
+canvas#c { display: block; width: 100%; height: 100%; touch-action: none; }
+.badge { position: absolute; left: 0; top: 0; width: 30px; height: 30px; margin: -15px 0 0 -15px; border-radius: 50%; border: 2px solid #fff; background: #174B3B; color: #fff; font-family: var(--f-mono); font-weight: 500; font-size: 13px; display: grid; place-items: center; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,.25); transition: transform .15s; }
+.badge.on { background: #B65A2A; transform: scale(1.18); }
+.badge.dim { opacity: .35; }
+.legend { position: absolute; left: 10px; bottom: 10px; display: flex; flex-wrap: wrap; gap: 4px 12px; max-width: calc(100% - 20px); background: color-mix(in srgb, var(--panel) 86%, transparent); border: 1px solid var(--line); border-radius: 10px; padding: 7px 10px; font-size: 12.5px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.legend i { width: 18px; height: 4px; border-radius: 2px; display: inline-block; }
+.toolbar { position: absolute; right: 10px; top: 10px; display: flex; gap: 6px; }
+.hint { position: absolute; left: 10px; top: 10px; font-size: 12.5px; color: var(--muted); background: color-mix(in srgb, var(--panel) 80%, transparent); padding: 4px 9px; border-radius: 8px; }
+aside { min-height: 0; display: grid; grid-template-rows: auto 1fr; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+.tabs { display: grid; grid-template-columns: repeat(3, 1fr); border-bottom: 1px solid var(--line); }
+.tab { border: 0; background: transparent; padding: 11px 6px; font-family: var(--f-display); font-weight: 600; font-size: 17px; letter-spacing: .02em; cursor: pointer; color: var(--muted); border-bottom: 3px solid transparent; }
+.tab[aria-selected="true"] { color: var(--dark); border-bottom-color: var(--orange); }
+.pane { overflow-y: auto; padding: 14px 16px 18px; min-height: 0; }
+.pane h2 { font-family: var(--f-display); font-weight: 700; font-size: 25px; line-height: 1.05; margin: 2px 0 6px; color: var(--dark); text-wrap: balance; }
+.pane h3 { font-family: var(--f-mono); font-size: 11.5px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 14px 0 6px; font-weight: 500; }
+.pane p { margin: 0 0 8px; }
+.chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.chip { font-family: var(--f-mono); font-size: 11.5px; background: var(--chip); color: var(--dark); border-radius: 6px; padding: 2px 7px; }
+.nums { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
+.nums li { background: var(--panel2); border: 1px solid var(--line); border-radius: 9px; padding: 7px 10px; }
+.nums b { font-family: var(--f-mono); font-weight: 500; color: var(--orange); }
+.links { display: flex; flex-wrap: wrap; gap: 6px; }
+.link { border: 1px dashed var(--accent); background: transparent; color: var(--accent); border-radius: 999px; padding: 3px 10px; font-size: 13px; cursor: pointer; }
+.list { display: grid; gap: 6px; }
+.item { text-align: left; border: 1px solid var(--line); background: var(--panel2); border-radius: 10px; padding: 8px 10px; cursor: pointer; display: grid; grid-template-columns: 30px 1fr; gap: 2px 8px; align-items: start; }
+.item .n { grid-row: span 2; width: 26px; height: 26px; border-radius: 50%; background: var(--dark); color: var(--panel); font-family: var(--f-mono); font-size: 12.5px; display: grid; place-items: center; }
+.item .t { font-weight: 600; }
+.item .s { font-size: 12.5px; color: var(--muted); }
+.item[aria-current="true"] { border-color: var(--orange); background: color-mix(in srgb, var(--orange) 10%, var(--panel)); }
+.item[aria-current="true"] .n { background: var(--orange); }
+.chain { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin: 4px 0 8px; }
+.chain .node { background: var(--dark); color: var(--panel); border-radius: 6px; padding: 2px 8px; font-size: 13px; font-weight: 600; }
+.chain .arr { color: var(--orange); font-weight: 700; }
+.detail { background: var(--panel2); border: 1px solid var(--line); border-left: 4px solid var(--orange); border-radius: 10px; padding: 10px 12px; margin: 10px 0 12px; }
+.back { border: 0; background: none; color: var(--accent); cursor: pointer; padding: 0; font-size: 13.5px; margin-bottom: 6px; }
+.calc { display: grid; gap: 10px; }
+.field { display: grid; gap: 4px; }
+.field label { font-size: 13.5px; font-weight: 600; }
+.field .row { display: flex; gap: 10px; align-items: center; }
+.field input[type=range] { flex: 1; accent-color: var(--orange); }
+.field output, .field .v { font-family: var(--f-mono); font-size: 13.5px; min-width: 58px; text-align: right; }
+select, input[type=number] { font: inherit; background: var(--panel2); color: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 5px 8px; }
+.res { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.res > div { background: var(--panel2); border: 1px solid var(--line); border-radius: 9px; padding: 7px 9px; }
+.res .k { font-size: 12px; color: var(--muted); }
+.res .val { font-family: var(--f-mono); font-size: 17px; font-variant-numeric: tabular-nums; color: var(--dark); }
+.note { font-size: 12.5px; color: var(--muted); }
+.loading { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); font-size: 14px; pointer-events: none; }
+@media (max-width: 900px) {
+  html, body { height: auto; }
+  .app { height: auto; }
+  main { grid-template-columns: 1fr; }
+  .stage { height: 62svh; min-height: 340px; }
+  aside { max-height: none; }
+  .pane { overflow: visible; }
+  .hint { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .badge { transition: none; } }
+</style>
+
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand">
+      <div class="eyebrow">Curso 3 · Nutrición mineral en hidroponía · resumen de las sesiones 1 a 7</div>
+      <h1>Invernadero del módulo: agua, solución, cultivo y descarte</h1>
+    </div>
+    <div class="views" role="group" aria-label="Vistas de cámara">
+      <button class="btn" data-view="general" aria-pressed="true">Vista general</button>
+      <button class="btn" data-view="cabezal" aria-pressed="false">Cabezal de riego</button>
+      <button class="btn" data-view="nft" aria-pressed="false">NFT de lechuga</button>
+      <button class="btn" data-view="sustrato" aria-pressed="false">Sustrato y frutales</button>
+    </div>
+  </header>
+  <main>
+    <section class="stage" id="stage" aria-label="Modelo 3D del invernadero">
+      <canvas id="c"></canvas>
+      <div class="loading" id="loading">Cargando el modelo 3D…</div>
+      <div class="hint" id="hint">Arrastre para girar · rueda o pellizco para acercar · toque un número</div>
+      <div class="toolbar">
+        <button class="btn" id="flowBtn" aria-pressed="true">Flujos</button>
+        <button class="btn" id="resetBtn">Ver todo</button>
+      </div>
+      <div class="legend" aria-label="Leyenda de flujos">
+        <span><i style="background:#3F88A6"></i>Agua</span>
+        <span><i style="background:#8A97A0"></i>Ácido y madres</span>
+        <span><i style="background:#2E9A7A"></i>Solución nutritiva</span>
+        <span><i style="background:#9A6B3C"></i>Drenaje</span>
+        <span><i style="background:#C2452F"></i>Descarte</span>
+      </div>
+    </section>
+    <aside>
+      <div class="tabs" role="tablist">
+        <button class="tab" role="tab" id="t-rec" aria-selected="true" aria-controls="p-rec">Recorrido</button>
+        <button class="tab" role="tab" id="t-int" aria-selected="false" aria-controls="p-int">Interacciones</button>
+        <button class="tab" role="tab" id="t-calc" aria-selected="false" aria-controls="p-calc">Agua y descarte</button>
+      </div>
+      <div class="pane" id="p-rec" role="tabpanel" aria-labelledby="t-rec"></div>
+      <div class="pane" id="p-int" role="tabpanel" aria-labelledby="t-int" hidden></div>
+      <div class="pane" id="p-calc" role="tabpanel" aria-labelledby="t-calc" hidden></div>
+    </aside>
+  </main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+(function () {
+'use strict';
+let ready = false;
+const fmt = (x, d = 1) => Number(x).toLocaleString('es-CL', { minimumFractionDigits: d, maximumFractionDigits: d });
+
+/* ======================= contenido ======================= */
+const STATIONS = [
+  { id: 1, key: 'agua', title: 'Agua de origen', ses: ['S2', 'S7'], pos: [-6.5, 2.45, -12.5], keys: ['pozo', 'lluvia', 'osmosis'], paths: ['agua', 'lluvia'], view: 'cabezal', cam: { p: [0.5, 10, -26], t: [0.3, 0.4, -10.5] },
+    intro: 'El análisis del pozo fija cuánto ácido se usa, qué parte de la receta ya viene en el agua y cuánto sodio entra al sistema cerrado.',
+    nums: ['Pozo del caso: pH <b>7,6</b>; CE <b>0,55</b> dS/m; HCO₃⁻ <b>3,50</b> mmol/L', 'Ca <b>1,50</b> · Mg <b>0,75</b> · Na <b>0,80</b> · Cl <b>1,00</b> · SO₄ <b>0,45</b> mmol/L', 'Fe <b>6,3</b> µmol/L: sobre el límite de 5 para goteo (de Kreij et al. 2003)', 'Lluvia: sin sales y sin bicarbonato; ósmosis: igual, pero sin tampón de pH'],
+    ints: [1, 9, 10] },
+  { id: 2, key: 'acido', title: 'Ácido y tanque C', ses: ['S2', 'S4', 'S6'], pos: [-1.3, 1.9, -8.8], keys: ['tanqueC'], paths: ['madres'], view: 'cabezal',
+    intro: 'Se deja 0,5 mmol/L de bicarbonato como reserva; el resto se neutraliza. El ácido entra a la solución como nutriente.',
+    nums: ['H⁺ necesario: 3,50 − 0,50 = <b>3,0</b> mmol/L', 'Caso: <b>68</b> mL de H₃PO₄ 85 % y <b>140</b> mL de HNO₃ 65 % por 1000 L', 'El fosfórico da <b>1,0</b> mmol/L de H₂PO₄⁻: todo el P de la receta', 'Tanque C a 0,20 mol/L: va primero al diluir y corrige el pH por titulación de 1 L'],
+    ints: [1, 2, 10] },
+  { id: 3, key: 'receta', title: 'Receta y fertilizantes', ses: ['S1', 'S3'], pos: [-3.0, 1.6, -8.7], keys: ['sacos'], paths: [], view: 'cabezal',
+    intro: 'Fertilizantes = receta − agua − ácido. Las unidades de la sesión 1 (mmol/L, meq/L, CE) sostienen toda la cuenta.',
+    nums: ['Lechuga (Cornell), mmol/L: NO₃⁻ <b>8,7</b> · NH₄⁺ <b>0,2</b> · H₂PO₄⁻ <b>1,0</b> · K⁺ <b>5,5</b> · Ca²⁺ <b>2,1</b> · Mg²⁺ <b>1,0</b> · SO₄²⁻ <b>1,1</b>', 'Con el pozo: <b>736</b> g de sales por 1000 L', 'CE ≈ cationes ÷ 10 = <b>1,26</b> dS/m', 'Quelato de Fe según pH: EDTA hasta 6,3; DTPA hasta 7,5; EDDHA de 4 a 10'],
+    ints: [1, 2, 11] },
+  { id: 4, key: 'madres', title: 'Soluciones madre A y B', ses: ['S4'], pos: [0.3, 1.9, -8.8], keys: ['madreA', 'madreB'], paths: ['madres'], view: 'cabezal',
+    intro: 'Concentradas 100 veces, el calcio precipita con sulfato y con fosfato. Por eso van en dos tanques y se juntan solo diluidas.',
+    nums: ['A: nitrato de calcio y quelato de Fe · B: fosfato, sulfatos, KNO₃ y micronutrientes', 'Factor 100×: <b>10</b> L de A y <b>10</b> L de B por 1000 L', '1 L de A y 1 L de B en 1000 L suman <b>0,072</b> dS/m', 'Orden al diluir: agua → C → B → A'],
+    ints: [4, 7, 11] },
+  { id: 5, key: 'mezcla', title: 'Tanque de mezcla y sensores', ses: ['S6'], pos: [2.6, 2.2, -8.2], keys: ['mezcla', 'sensores'], paths: ['madres', 'nft', 'riego'], view: 'cabezal',
+    intro: 'Cada mañana: volumen y CE a 25 °C, concentración de absorción y litros de madre. Después el pH.',
+    nums: ['CE ≈ 2 % por °C: 1,26 se lee <b>1,08</b> a 18 °C', 'Absorción: (1,26 × 1000 − 1,40 × 600) ÷ 400 = <b>1,05</b> dS/m', 'Reponer con <b>2,83</b> L de A y de B mantiene 1,26; con 4 L la CE sube <b>0,14</b> por día', 'Análisis de laboratorio cada 2 semanas; hoja y solución el mismo día'],
+    ints: [6, 7, 12] },
+  { id: 6, key: 'nft', title: 'NFT de lechuga (el caso)', ses: ['S1', 'S5', 'S6'], pos: [-2.1, 1.6, 2.0], keys: ['nft'], paths: ['nft'], view: 'nft',
+    intro: 'Una lámina de solución recorre el canal y vuelve al tanque. Poca agua en la raíz: todo cambia rápido.',
+    nums: ['≈ <b>3</b> L/m² de agua en la zona de raíces (Stanghellini)', 'Tanque de 1000 L para 160 m²: agua para ≈ <b>2,5</b> días', 'Cosecha a los 35 días; pH 5,6–6,0; Na máximo <b>5</b> mmol/L', 'Hoja a las 8 hojas: N 40–60, K 50–60, Ca 17–20 g/kg'],
+    ints: [3, 5, 12] },
+  { id: 7, key: 'dft', title: 'Raíz flotante', ses: ['S5'], pos: [2.1, 1.0, -3.4], keys: ['dft'], paths: ['riego'], view: 'sustrato',
+    intro: 'Las raíces cuelgan en una piscina de solución: mucho volumen, cambios lentos de CE, pH y temperatura.',
+    nums: ['≈ <b>100</b> L/m² en la zona de raíces', 'Holanda: CE de riego <b>2,3</b> y <b>2,5</b> en la raíz, con menos luz', 'Cornell: solución bajo 20 °C y O₂ disuelto de al menos <b>4</b> mg/L'],
+    ints: [6, 11] },
+  { id: 8, key: 'tomate', title: 'Tomate en sustrato', ses: ['S5'], pos: [2.1, 2.9, 1.8], keys: ['tomate'], paths: ['riego', 'drenaje'], view: 'sustrato',
+    intro: 'Gotero y drenaje no tienen la misma solución: la raíz queda más concentrada que el riego.',
+    nums: ['Riego <b>2,6</b> y zona de raíces <b>3,7</b> dS/m con 30 % de drenaje', 'K:Ca por etapa: <b>0,67</b> → 0,85 → <b>1,23</b> → 1,03', '≈ <b>10</b> L/m² de agua en lana de roca, perlita o coco', 'Na máximo <b>8</b> mmol/L; pierde 2–7 % por dS/m'],
+    ints: [5, 8, 11] },
+  { id: 9, key: 'bayas', title: 'Frutilla y arándano', ses: ['S5', 'S6'], pos: [2.1, 1.9, 7.6], keys: ['frutilla', 'arandano'], paths: ['riego', 'drenaje'], view: 'sustrato',
+    intro: 'Dos frutales de baya en sustrato, los más sensibles a la sal de los cultivos del curso.',
+    nums: ['Frutilla: riego <b>1,5</b> y raíz <b>2,0</b> dS/m; Na máximo <b>3</b> mmol/L; > 10 % por dS/m', 'Arándano: riego hasta <b>1,0</b> dS/m; lixiviado pH 4,5–5,5', 'Arándano con el pozo: <b>2,70</b> mmol/L de ácido para pH 5,8', 'Arándano: NH₄⁺ ≈ 2 veces el NO₃⁻'],
+    ints: [3, 8, 11] },
+  { id: 10, key: 'descarte', title: 'Drenaje, recirculación y descarte', ses: ['S7'], pos: [5.6, 1.4, -8.2], keys: ['drenaje', 'descarte'], paths: ['drenaje', 'descarte'], view: 'cabezal',
+    intro: 'El agua sale por transpiración y la sal se queda. Con el sodio en el límite, el tanque se descarta.',
+    nums: ['C = C<sub>agua</sub> (1 + U/V): con Na 0,80 y máximo 5 mmol/L, descarte cada <b>13,1</b> días', '<b>19</b> % de agua descartada por cada litro absorbido', 'Cada descarte: <b>124</b> g de N → <b>215</b> kg N/ha·año', 'Con 30 % de lluvia: cada <b>19,8</b> días; agotar el N a 1 mmol/L antes de botar'],
+    ints: [9, 10] },
+  { id: 11, key: 'clima', title: 'Clima del invernadero', ses: ['Curso 1', 'S1', 'S5'], pos: [0, 5.4, 0], keys: ['clima'], paths: [], view: 'general',
+    intro: 'Radiación, temperatura y humedad mueven la transpiración, y con ella el agua, el calcio y la CE del tanque.',
+    nums: ['Más radiación: la planta toma más agua que sales y la CE del tanque sube', 'Días de alta radiación: CE de riego más baja (sesión 5)', 'Noche húmeda: poca transpiración de hojas internas y frutos → falta Ca local'],
+    ints: [5, 6] }
+];
+
+const INTERS = [
+  { id: 1, t: 'Bicarbonato, ácido y nutrientes del ácido', ses: 'S2 · S3', chain: ['HCO₃⁻ del pozo', 'ácido', 'N y P en la solución', 'receta'], keys: ['pozo', 'tanqueC', 'mezcla', 'sacos'], paths: ['agua', 'madres'],
+    d: '3,50 mmol/L de HCO₃⁻ obligan a agregar 3,0 mmol/L de H⁺. El fosfórico deja 1,0 mmol/L de H₂PO₄⁻ (todo el P de la receta) y el nítrico 2,0 de los 8,7 mmol/L de NO₃⁻. La receta descuenta ambos antes de pesar sales.' },
+  { id: 2, t: 'pH, hierro y manganeso', ses: 'S3 · S6', chain: ['pH sobre 7', 'Fe y Mn no disponibles', 'clorosis en hojas nuevas'], keys: ['mezcla', 'sensores', 'nft', 'sacos'], paths: ['nft'],
+    d: 'Con el tanque C vacío, el pH sube sobre 7 y aparece clorosis pareja en hojas nuevas (trabajo personal de la sesión 6). El quelato fija hasta qué pH aguanta el Fe: EDTA 6,3; DTPA 7,5; EDDHA 10.' },
+  { id: 3, t: 'Forma del nitrógeno y pH de la raíz', ses: 'S1 · S5', chain: ['NO₃⁻ o NH₄⁺', 'OH⁻ o H⁺ de la raíz', 'pH de la solución'], keys: ['nft', 'tomate', 'arandano', 'mezcla'], paths: ['nft', 'riego'],
+    d: 'Al absorber NO₃⁻ la raíz libera OH⁻ y el pH sube; con NH₄⁺ libera H⁺ y baja. La lechuga, casi todo con nitrato, sube el pH del tanque cada noche. El arándano usa NH₄⁺ ≈ 2 veces el NO₃⁻ para mantener la raíz ácida.' },
+  { id: 4, t: 'Calcio, sulfato y fosfato: dos madres', ses: 'S4', chain: ['Ca²⁺ con SO₄²⁻ o fosfato', 'precipitado', 'tanques A y B'], keys: ['madreA', 'madreB', 'mezcla'], paths: ['madres'],
+    d: 'A 100 veces la concentración final, el Ca precipita como yeso o fosfato de calcio. El nitrato de calcio va en A; sulfatos y fosfatos en B. Se juntan solo diluidos, en el orden agua → C → B → A.' },
+  { id: 5, t: 'Transpiración, calcio y tipburn', ses: 'Curso 1 · S1 · S5', chain: ['clima', 'transpiración de cada órgano', 'Ca que llega', 'tipburn o pudrición apical'], keys: ['clima', 'nft', 'tomate'], paths: [],
+    d: 'El Ca viaja con el agua que transpira cada órgano y casi no se mueve por el floema. Hojas internas de lechuga y frutos transpiran poco: el daño aparece aunque la solución tenga Ca suficiente.' },
+  { id: 6, t: 'Radiación y concentración de absorción', ses: 'S5 · S6', chain: ['radiación', 'más agua que sales', 'CE del tanque sube', 'reponer más diluido'], keys: ['clima', 'mezcla', 'sensores', 'nft'], paths: ['nft'],
+    d: 'La planta toma una solución de 1,05 dS/m mientras el tanque tiene 1,26. Con más luz la diferencia crece. La reposición se calcula con la CE de absorción y la CE de riego se baja en días soleados.' },
+  { id: 7, t: 'Reposición y CE del tanque', ses: 'S6', chain: ['litros de A y B', 'CE después de reponer', 'CE del día siguiente'], keys: ['madreA', 'madreB', 'mezcla', 'sensores'], paths: ['madres'],
+    d: 'Con 600 L a 1,40, reponer 400 L con 4 L de cada madre deja el tanque en 1,34 y la CE sube 0,14 por día. Con 2,83 L vuelve a 1,26. Sobre 1,74 dS/m no se corrige reponiendo: hay que diluir.' },
+  { id: 8, t: 'Drenaje y CE de la raíz', ses: 'S5', chain: ['% de drenaje', 'sal que queda en el sustrato', 'CE de la raíz'], keys: ['tomate', 'frutilla', 'arandano', 'drenaje'], paths: ['riego', 'drenaje'],
+    d: 'Tomate regado con 2,6 tiene 3,7 en la raíz con 30 % de drenaje. Con 10 % de drenaje la raíz llega a 6,8; con 50 %, a 3,1 (balance didáctico de la sesión 5).' },
+  { id: 9, t: 'Sodio, descarte y nitrógeno perdido', ses: 'S2 · S7', chain: ['Na del pozo', 'acumulación', 'descarte', 'N perdido'], keys: ['pozo', 'mezcla', 'descarte', 'nft'], paths: ['agua', 'descarte'],
+    d: 'La lechuga casi no absorbe Na. Cada litro absorbido deja 0,80 mmol en el tanque: a los 5 mmol/L se descarta (13,1 días) y se botan 124 g de N. Una CE estable puede esconder ese sodio.' },
+  { id: 10, t: 'Lluvia u ósmosis', ses: 'S2 · S7', chain: ['mezcla de agua', 'menos Na y HCO₃⁻', 'menos ácido y menos descarte'], keys: ['lluvia', 'pozo', 'osmosis', 'tanqueC'], paths: ['agua', 'lluvia'],
+    d: 'Con 30 % de lluvia: Na 0,56 mmol/L, ácido 1,95 mmol/L y descarte cada 19,8 días. Con agua casi sin sales falta tampón: se agrega KHCO₃ (0,5 mmol/L = 50 g por 1000 L).' },
+  { id: 11, t: 'Cultivo y etapa: otra receta', ses: 'S5', chain: ['cultivo y etapa', 'K:Ca y N:K', 'CE objetivo'], keys: ['nft', 'tomate', 'frutilla', 'arandano', 'madreA', 'madreB'], paths: ['riego'],
+    d: 'Mismo pozo, otra receta: lechuga 1,26; frutilla 1,35; tomate abierto ≈ 2,5 dS/m. En tomate el K:Ca sube de 0,67 al trasplante a 1,23 en maduración, porque el fruto pide potasio.' },
+  { id: 12, t: 'Hoja y solución: diagnóstico', ses: 'S6', chain: ['análisis de solución', 'análisis de hoja', 'falta o no llega'], keys: ['nft', 'sensores', 'mezcla'], paths: ['nft'],
+    d: 'La solución dice qué hay en el tanque; la hoja, qué llegó a la planta. K bajo en los dos: falta en el tanque. Fe bajo en hoja con pH 6,7: hay en la solución y no llega.' }
+];
+
+const VIEWS = {
+  general: { p: [-17, 15, -24], t: [0.5, 0.2, -3] },
+  cabezal: { p: [7.5, 4.6, -15.8], t: [0.6, 0.9, -8.0] },
+  nft: { p: [-9.5, 4.6, -1.5], t: [-2.0, 0.8, 2.6] },
+  sustrato: { p: [9.8, 4.2, 0.5], t: [2.0, 1.0, 3.5] }
+};
+
+/* ======================= panel ======================= */
+const pRec = document.getElementById('p-rec'), pInt = document.getElementById('p-int'), pCalc = document.getElementById('p-calc');
+const tabs = { rec: [document.getElementById('t-rec'), pRec], int: [document.getElementById('t-int'), pInt], calc: [document.getElementById('t-calc'), pCalc] };
+function showTab(k) { for (const [kk, [b, p]] of Object.entries(tabs)) { b.setAttribute('aria-selected', kk === k); p.hidden = kk !== k; } }
+for (const [k, [b]] of Object.entries(tabs)) b.addEventListener('click', () => { showTab(k); if (k === 'calc') select({ keys: ['pozo', 'lluvia', 'mezcla', 'descarte', 'nft'], paths: ['agua', 'lluvia', 'descarte'] }, null); });
+
+function renderRecList() {
+  pRec.innerHTML = '<h2>Recorrido del agua a la planta</h2><p class="note">Once estaciones en el orden en que se arma y se maneja la solución. Cada una indica la sesión donde se vio.</p><div class="list">' +
+    STATIONS.map(s => `<button class="item" data-st="${s.id}"><span class="n">${s.id}</span><span class="t">${s.title}</span><span class="s">${s.ses.join(' · ')}</span></button>`).join('') + '</div>';
+  pRec.querySelectorAll('[data-st]').forEach(b => b.addEventListener('click', () => openStation(+b.dataset.st)));
+}
+function openStation(id) {
+  const s = STATIONS.find(x => x.id === id);
+  showTab('rec');
+  pRec.innerHTML = `<button class="back" id="backRec">← Todas las estaciones</button>
+    <div class="eyebrow">Estación ${s.id} de ${STATIONS.length}</div><h2>${s.title}</h2>
+    <div class="chips">${s.ses.map(x => `<span class="chip">${x}</span>`).join('')}</div>
+    <p style="margin-top:10px">${s.intro}</p>
+    <h3>Números del caso</h3><ul class="nums">${s.nums.map(n => `<li>${n}</li>`).join('')}</ul>
+    <h3>Se conecta con</h3><div class="links">${s.ints.map(i => `<button class="link" data-int="${i}">${INTERS[i - 1].t}</button>`).join('')}</div>
+    <h3>Siguiente</h3><div class="links">${id > 1 ? `<button class="link" data-go="${id - 1}">← ${STATIONS[id - 2].title}</button>` : ''}${id < STATIONS.length ? `<button class="link" data-go="${id + 1}">${STATIONS[id].title} →</button>` : ''}</div>`;
+  pRec.querySelector('#backRec').addEventListener('click', () => { renderRecList(); select(null, null); });
+  pRec.querySelectorAll('[data-int]').forEach(b => b.addEventListener('click', () => openInter(+b.dataset.int)));
+  pRec.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => openStation(+b.dataset.go)));
+  pRec.scrollTop = 0;
+  select(s, s.id);
+  if (ready && s.cam) { tween = { p0: camera.position.clone(), t0: controls.target.clone(), p1: new THREE.Vector3(...s.cam.p), t1: new THREE.Vector3(...s.cam.t), s: performance.now(), dur: 900 }; } else goView(s.view, s.pos);
+}
+function renderInt(cur) {
+  const it = cur ? INTERS[cur - 1] : null;
+  pInt.innerHTML = '<h2>Interacciones entre sesiones</h2><p class="note">Toque una para ver qué partes del invernadero se mueven juntas.</p>' +
+    (it ? `<div class="detail"><div class="eyebrow">${it.ses}</div><div class="chain">${it.chain.map((c, i) => (i ? '<span class="arr">→</span>' : '') + `<span class="node">${c}</span>`).join('')}</div><p>${it.d}</p></div>` : '') +
+    '<div class="list">' + INTERS.map(x => `<button class="item" data-i="${x.id}" ${cur === x.id ? 'aria-current="true"' : ''}><span class="n">${x.id}</span><span class="t">${x.t}</span><span class="s">${x.ses}</span></button>`).join('') + '</div>';
+  pInt.querySelectorAll('[data-i]').forEach(b => b.addEventListener('click', () => openInter(+b.dataset.i)));
+}
+function openInter(id) {
+  showTab('int'); renderInt(id); pInt.scrollTop = 0;
+  const it = INTERS[id - 1];
+  select(it, null);
+  goView('general');
+}
+
+/* calculadora (Stanghellini, ec. 13.1–13.4; sesiones 2 y 7) */
+function renderCalc() {
+  pCalc.innerHTML = `<h2>Agua de origen y descarte</h2>
+  <p class="note">Mezcla del pozo con lluvia en el sistema cerrado del caso (1000 L, 400 L/día absorbidos, 160 m²). La lluvia se supone sin sales.</p>
+  <div class="calc">
+    <div class="field"><label for="fRain">Agua de lluvia en la mezcla</label><div class="row"><input id="fRain" type="range" min="0" max="90" step="5" value="0"><output id="oRain">0 %</output></div></div>
+    <div class="field"><label for="fCrop">Cultivo (Na máximo antes de descartar)</label><select id="fCrop"><option value="5">Lechuga · 5 mmol/L</option><option value="8">Tomate · 8 mmol/L</option><option value="3">Frutilla · 3 mmol/L</option></select></div>
+    <div class="field"><label for="fNa">Na del pozo (mmol/L)</label><div class="row"><input id="fNa" type="number" min="0.1" max="10" step="0.05" value="0.80" style="width:110px"></div></div>
+    <div class="res" aria-live="polite">
+      <div><div class="k">Na de entrada</div><div class="val" id="rNa"></div></div>
+      <div><div class="k">HCO₃⁻ de entrada</div><div class="val" id="rHco"></div></div>
+      <div><div class="k">Ácido para dejar 0,5</div><div class="val" id="rAc"></div></div>
+      <div><div class="k">HNO₃ 65 % equivalente</div><div class="val" id="rMl"></div></div>
+      <div><div class="k">Días hasta descartar</div><div class="val" id="rDays"></div></div>
+      <div><div class="k">Agua descartada / absorbida</div><div class="val" id="rPct"></div></div>
+      <div><div class="k">Descartes por año</div><div class="val" id="rYr"></div></div>
+      <div><div class="k">N perdido</div><div class="val" id="rN"></div></div>
+    </div>
+    <p class="note" id="rNote"></p>
+    <p class="note">C = C<sub>agua</sub> (1 + U/V) (Stanghellini et al. 2024, ec. 13.1). N de la solución 8,82 mmol/L; 69,7 mL de HNO₃ 65 % por cada mmol/L de H⁺ en 1000 L (sesión 2). Supone que el cultivo no absorbe Na.</p>
+  </div>`;
+  const f = id => pCalc.querySelector('#' + id);
+  const upd = () => {
+    const rain = +f('fRain').value / 100, cmax = +f('fCrop').value, naW = Math.max(0.05, +f('fNa').value || 0.8);
+    f('oRain').textContent = Math.round(rain * 100) + ' %';
+    const cin = naW * (1 - rain), V = 1000, Ud = 400;
+    const hco = 3.5 * (1 - rain), ac = hco - 0.5;
+    f('rNa').textContent = fmt(cin, 2) + ' mmol/L';
+    f('rHco').textContent = fmt(hco, 2) + ' mmol/L';
+    f('rAc').textContent = ac > 0 ? fmt(ac, 2) + ' mmol/L' : 'sin ácido';
+    f('rMl').textContent = ac > 0 ? fmt(ac * 69.7, 0) + ' mL/1000 L' : 'KHCO₃ ' + fmt(Math.max(0, 0.5 - hco) * 100, 0) + ' g';
+    if (cin >= cmax) { ['rDays', 'rPct', 'rYr', 'rN'].forEach(k => f(k).textContent = '—'); f('rNote').textContent = 'El agua ya trae el máximo de Na: no sirve para un sistema cerrado.'; return; }
+    const U = (cmax / cin - 1) * V, days = U / Ud, yr = 365 / days, nKg = V * 8.82 * 14.007 / 1e6;
+    f('rDays').textContent = fmt(days, 1) + ' días';
+    f('rPct').textContent = fmt(V / U * 100, 1) + ' %';
+    f('rYr').textContent = fmt(yr, 1);
+    f('rN').textContent = fmt(yr * nKg, 2) + ' kg/año';
+    f('rNote').textContent = `≈ ${fmt(yr * nKg / 0.016, 0)} kg N/ha·año en el módulo de 160 m². Cada descarte bota ${fmt(nKg * 1000, 0)} g de N.` + (ac <= 0 ? ' Con tan poco bicarbonato, la solución queda sin tampón: se agrega KHCO₃ hasta 0,5 mmol/L.' : '');
+  };
+  ['fRain', 'fCrop', 'fNa'].forEach(id => f(id).addEventListener('input', upd));
+  upd();
+}
+renderRecList(); renderInt(null); renderCalc();
+
+/* ======================= escena 3D ======================= */
+const stage = document.getElementById('stage');
+const loading = document.getElementById('loading');
+if (!window.THREE || !THREE.OrbitControls) { loading.textContent = 'No se pudo cargar el visor 3D. Revise la conexión a internet y recargue la página.'; return; }
+
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 200);
+const controls = new THREE.OrbitControls(camera, canvas);
+controls.enableDamping = true; controls.dampingFactor = 0.08; controls.maxPolarAngle = Math.PI * 0.49; controls.minDistance = 3; controls.maxDistance = 45;
+camera.position.set(...VIEWS.general.p); controls.target.set(...VIEWS.general.t);
+
+scene.add(new THREE.HemisphereLight(0xffffff, 0x7d8a7f, 0.55));
+const sun = new THREE.DirectionalLight(0xfff6e8, 0.8);
+sun.position.set(-12, 22, -8); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left: -16, right: 16, top: 16, bottom: -16, near: 1, far: 60 });
+scene.add(sun);
+
+function cssVar(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+let groundMesh = null, floorMesh = null;
+function applyTheme() { const c = new THREE.Color(cssVar('--sky') || '#E4ECEA'); scene.background = c; scene.fog = new THREE.Fog(c, 38, 90);
+  const dark = (c.r + c.g + c.b) / 3 < 0.3; if (groundMesh) { groundMesh.material.color.set(dark ? 0x34402F : 0x9DAF88); floorMesh.material.color.set(dark ? 0x5A5B54 : 0xCBC6B8); } }
+applyTheme();
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyTheme);
+new MutationObserver(applyTheme).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+/* registro de objetos para resaltar */
+const REG = {};
+function mat(color, opts = {}) { return new THREE.MeshStandardMaterial(Object.assign({ color, roughness: 0.75, metalness: 0.05 }, opts)); }
+function reg(key, obj) {
+  (REG[key] = REG[key] || []).push(obj);
+  obj.traverse(o => { if (o.isMesh || o.isSprite) { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } o.material = Array.isArray(o.material) ? o.material.map(m => m.clone()) : o.material.clone(); const ms = Array.isArray(o.material) ? o.material : [o.material]; ms.forEach(m => { m.userData.base = { op: m.opacity, tr: m.transparent, em: m.emissive ? m.emissive.clone() : null }; }); o.userData.key = key; } });
+  scene.add(obj); return obj;
+}
+function box(w, h, d, color, x, y, z, o = {}) { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(color, o)); m.position.set(x, y, z); return m; }
+function cyl(r, h, color, x, y, z, o = {}, seg = 28) { const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, seg), mat(color, o)); m.position.set(x, y, z); return m; }
+function group(...ch) { const g = new THREE.Group(); ch.forEach(c => g.add(c)); return g; }
+function label(text, w = 256, h = 96, bg = '#174B3B', fg = '#ffffff', size = 40) {
+  const cv = document.createElement('canvas'); cv.width = w; cv.height = h; const g = cv.getContext('2d');
+  g.fillStyle = bg; g.fillRect(0, 0, w, h); g.fillStyle = fg; g.font = `600 ${size}px Arial`; g.textAlign = 'center'; g.textBaseline = 'middle';
+  text.split('\n').forEach((t, i, a) => g.fillText(t, w / 2, h / 2 + (i - (a.length - 1) / 2) * size * 1.15));
+  const tx = new THREE.CanvasTexture(cv); tx.encoding = THREE.sRGBEncoding; return tx;
+}
+
+/* suelo */
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(220, 220), mat(0x9DAF88));
+ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground); groundMesh = ground;
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(8, 20), mat(0xCBC6B8));
+floor.rotation.x = -Math.PI / 2; floor.position.y = 0.005; floor.receiveShadow = true; scene.add(floor); floorMesh = floor; applyTheme();
+
+/* estructura del invernadero: 8 × 20 m, canaleta 3,5 m, cumbrera 5 m */
+const W = 4, L = 10, HG = 3.5, HR = 5.0;
+const steel = mat(0x7E8A87, { metalness: 0.4, roughness: 0.5 });
+const frameG = new THREE.Group();
+for (let z = -L; z <= L + 0.01; z += 2.5) {
+  for (const x of [-W, W]) { const p = new THREE.Mesh(new THREE.BoxGeometry(0.08, HG, 0.08), steel); p.position.set(x, HG / 2, z); frameG.add(p); }
+  const rl = Math.hypot(W, HR - HG);
+  for (const s of [-1, 1]) { const r = new THREE.Mesh(new THREE.BoxGeometry(rl, 0.07, 0.07), steel); r.position.set(s * W / 2, (HG + HR) / 2, z); r.rotation.z = -s * Math.atan2(HR - HG, W); frameG.add(r); }
+  const tie = new THREE.Mesh(new THREE.BoxGeometry(2 * W, 0.05, 0.05), steel); tie.position.set(0, HG, z); frameG.add(tie);
+}
+for (const [x, y] of [[-W, HG], [W, HG], [0, HR]]) { const b = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.07, 2 * L), steel); b.position.set(x, y, 0); frameG.add(b); }
+scene.add(frameG);
+const film = new THREE.MeshStandardMaterial({ color: 0xDDEEF2, transparent: true, opacity: 0.16, side: THREE.DoubleSide, depthWrite: false, roughness: 0.2 });
+for (const x of [-W, W]) { const w = new THREE.Mesh(new THREE.PlaneGeometry(2 * L, HG), film); w.rotation.y = Math.PI / 2; w.position.set(x, HG / 2, 0); scene.add(w); }
+const rl = Math.hypot(W, HR - HG);
+for (const s of [-1, 1]) { const r = new THREE.Mesh(new THREE.PlaneGeometry(rl, 2 * L), film); r.rotation.x = -Math.PI / 2; r.rotation.y = s * Math.atan2(HR - HG, W); r.position.set(s * W / 2, (HG + HR) / 2, 0); scene.add(r); }
+const endShape = new THREE.Shape([new THREE.Vector2(-W, 0), new THREE.Vector2(W, 0), new THREE.Vector2(W, HG), new THREE.Vector2(0, HR), new THREE.Vector2(-W, HG)]);
+for (const z of [-L, L]) { const e = new THREE.Mesh(new THREE.ShapeGeometry(endShape), film); e.position.z = z; scene.add(e); }
+const sunMesh = new THREE.Mesh(new THREE.SphereGeometry(0.7, 24, 16), mat(0xF2C230, { emissive: 0xE0A400, emissiveIntensity: 0.6 })); sunMesh.position.set(-11, 13, 13);
+const vent = box(0.05, 0.9, 6, 0x9FB8C0, -2.0, 4.5, 3, { transparent: true, opacity: 0.6 }); vent.rotation.z = 0.5;
+reg('clima', group(sunMesh, vent));
+
+/* ===== agua de origen ===== */
+const pozo = group(cyl(0.55, 0.7, 0x8C8F87, 0, 0.35, 0), cyl(0.45, 0.04, 0x55616A, 0, 0.72, 0), box(0.35, 0.35, 0.35, 0x2F6DB5, 0, 0.95, 0), cyl(0.05, 1.1, 0x55616A, 0, 0.55, 0));
+pozo.position.set(-6.5, 0, -12.5); reg('pozo', pozo);
+const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: label('POZO'), depthTest: true })); sp.scale.set(1.1, 0.42, 1); sp.position.set(-6.5, 1.6, -12.5); reg('pozo', sp);
+const lluvia = group(cyl(0.9, 1.8, 0x4E93AE, 0, 0.9, 0), cyl(0.92, 0.05, 0x2E5F72, 0, 1.82, 0));
+lluvia.position.set(7.0, 0, -12.5); reg('lluvia', lluvia);
+const down = cyl(0.06, 3.4, 0x55616A, 4.05, 1.75, -9.6); reg('lluvia', down);
+const sp2 = new THREE.Sprite(new THREE.SpriteMaterial({ map: label('LLUVIA') })); sp2.scale.set(1.1, 0.42, 1); sp2.position.set(7, 2.35, -12.5); reg('lluvia', sp2);
+const osm = group(box(0.5, 1.2, 0.9, 0xE6E9EA, 0, 0.6, 0), cyl(0.07, 0.9, 0x2F6DB5, -0.12, 0.7, 0.25), cyl(0.07, 0.9, 0x2F6DB5, 0.12, 0.7, 0.25));
+osm.position.set(-3.6, 0, -6.9); reg('osmosis', osm);
+
+/* ===== mesa de fertilizantes (receta) ===== */
+const sacos = group(box(1.3, 0.06, 0.8, 0x8A6E52, 0, 0.85, 0), box(0.06, 0.85, 0.06, 0x5E4A36, -0.6, 0.42, -0.35), box(0.06, 0.85, 0.06, 0x5E4A36, 0.6, 0.42, -0.35), box(0.06, 0.85, 0.06, 0x5E4A36, -0.6, 0.42, 0.35), box(0.06, 0.85, 0.06, 0x5E4A36, 0.6, 0.42, 0.35));
+const bagCols = [0xF1E6C8, 0xE4EEF2, 0xF3D9CC, 0xDDE8D2];
+bagCols.forEach((c, i) => { const b = box(0.26, 0.38, 0.18, c, -0.45 + i * 0.3, 1.07, -0.05); b.rotation.y = 0.1 * (i - 1.5); sacos.add(b); });
+sacos.add(box(0.3, 0.06, 0.25, 0x55616A, 0.35, 0.91, 0.25)); // balanza
+sacos.position.set(-3.0, 0, -8.8); reg('sacos', sacos);
+
+/* ===== tanques madre y ácido ===== */
+function stockTank(color, txt, x) {
+  const g = group(cyl(0.32, 0.95, color, 0, 0.48 + 0.35, 0), cyl(0.33, 0.05, 0x3B4D47, 0, 0.98 + 0.35, 0));
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: label(txt, 128, 128, '#ffffff', '#174B3B', 72) })); s.scale.set(0.42, 0.42, 1); s.position.set(0, 1.62, 0); g.add(s);
+  g.position.set(x, 0, -8.8); return g;
+}
+const bench = box(3.4, 0.08, 0.9, 0x8A9592, -0.2, 0.33, -8.8); scene.add(bench);
+reg('tanqueC', stockTank(0x9AA3A8, 'C', -1.3));
+reg('madreA', stockTank(0x2E7180, 'A', -0.2));
+reg('madreB', stockTank(0xB65A2A, 'B', 0.9));
+
+/* ===== tanque de mezcla, bomba y sensores ===== */
+const mezcla = group(cyl(0.62, 1.25, 0x3F88A6, 0, 0.63, 0, { transparent: true, opacity: 0.9 }), cyl(0.64, 0.05, 0x2E5F72, 0, 1.27, 0), box(0.35, 0.3, 0.3, 0x2F3F3A, 0.85, 0.15, 0.3));
+mezcla.position.set(2.6, 0, -8.2); reg('mezcla', mezcla);
+const sp3 = new THREE.Sprite(new THREE.SpriteMaterial({ map: label('1000 L') })); sp3.scale.set(0.9, 0.34, 1); sp3.position.set(2.6, 1.6, -8.2); reg('mezcla', sp3);
+const ctrlTex = label('CE 1,26 · pH 5,8', 512, 128, '#0F2A22', '#7FE0B0', 54);
+const ctrl = group(box(0.7, 0.5, 0.08, 0x2F3F3A, 0, 0, 0), new THREE.Mesh(new THREE.PlaneGeometry(0.6, 0.15), new THREE.MeshBasicMaterial({ map: ctrlTex })));
+ctrl.children[1].position.z = 0.045; ctrl.children[1].material.userData.base = { op: 1, tr: false, em: null };
+ctrl.position.set(3.2, 1.75, -9.55); reg('sensores', ctrl);
+reg('sensores', group(cyl(0.025, 0.8, 0x222222, 2.45, 1.45, -8.05), cyl(0.025, 0.8, 0x222222, 2.7, 1.45, -8.35)));
+
+/* ===== drenaje y descarte ===== */
+const dren = group(cyl(0.38, 0.75, 0x8A6E52, 0, 0.38, 0), box(0.4, 0.6, 0.4, 0xC8CFCC, 0.75, 0.3, 0));
+dren.position.set(2.6, 0, -6.6); reg('drenaje', dren);
+const sump = group(cyl(0.6, 0.12, 0xB74235, 0, 0.06, 0), box(0.25, 0.25, 0.25, 0xB74235, -1.0, 0.25, 0));
+sump.position.set(6.2, 0, -8.2); reg('descarte', sump);
+const sp4 = new THREE.Sprite(new THREE.SpriteMaterial({ map: label('DESCARTE', 256, 96, '#B74235') })); sp4.scale.set(1.1, 0.42, 1); sp4.position.set(6.2, 0.75, -8.2); reg('descarte', sp4);
+
+/* ===== NFT de lechuga ===== */
+const nft = new THREE.Group();
+const chX = [-3.55, -3.05, -2.55, -2.05, -1.55, -1.05];
+const z0 = -5.2, z1 = 9.3;
+chX.forEach(x => {
+  const ch = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.07, z1 - z0), mat(0xF2F2EE)); ch.position.set(x, 0.92, (z0 + z1) / 2); ch.rotation.x = -0.012; nft.add(ch);
+  for (let z = z0 + 0.5; z < z1; z += 2.4) { const leg = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.9, 0.04), steel); leg.position.set(x, 0.45, z); nft.add(leg); }
+});
+nft.add(box(2.7, 0.08, 0.1, 0x3F88A6, -2.3, 1.02, z0 - 0.05));
+nft.add(box(2.8, 0.1, 0.18, 0x8A9592, -2.3, 0.8, z1 + 0.15));
+const lettG = new THREE.IcosahedronGeometry(0.15, 1); lettG.scale(1, 0.62, 1);
+const lettN = []; chX.forEach(x => { for (let z = z0 + 0.3; z < z1 - 0.1; z += 0.4) lettN.push([x, 1.0, z]); });
+const lettM = new THREE.InstancedMesh(lettG, mat(0x7DB65A), lettN.length);
+const dm = new THREE.Object3D(); lettN.forEach((p, i) => { dm.position.set(...p); const s = 0.75 + 0.35 * ((p[2] - z0) / (z1 - z0)); dm.scale.set(s, s, s); dm.rotation.y = i; dm.updateMatrix(); lettM.setMatrixAt(i, dm.matrix); });
+nft.add(lettM);
+reg('nft', nft);
+
+/* ===== raíz flotante ===== */
+const dft = new THREE.Group();
+dft.add(box(3.0, 0.35, 3.4, 0x3B4D47, 2.1, 0.18, -3.35));
+dft.add(box(2.86, 0.02, 3.26, 0x4E93AE, 2.1, 0.34, -3.35, { roughness: 0.2 }));
+dft.add(box(2.8, 0.05, 3.2, 0xF4F4F0, 2.1, 0.38, -3.35));
+const dftP = []; for (let x = 0.85; x < 3.4; x += 0.42) for (let z = -4.85; z < -1.8; z += 0.42) dftP.push([x, 0.47, z]);
+const dftM = new THREE.InstancedMesh(lettG, mat(0x8FC46A), dftP.length);
+dftP.forEach((p, i) => { dm.position.set(...p); dm.scale.set(0.9, 0.9, 0.9); dm.rotation.y = i * 0.7; dm.updateMatrix(); dftM.setMatrixAt(i, dm.matrix); });
+dft.add(dftM); reg('dft', dft);
+
+/* ===== tomate en sustrato ===== */
+const tom = new THREE.Group();
+const tomRows = [1.3, 2.9], tz0 = -0.9, tz1 = 4.5;
+const leafG = new THREE.SphereGeometry(0.22, 10, 8); leafG.scale(1.2, 0.55, 0.8);
+const fruitG = new THREE.SphereGeometry(0.06, 10, 8);
+const leaves = [], fruits = [];
+tomRows.forEach(x => {
+  tom.add(box(0.25, 0.08, tz1 - tz0, 0x8A9592, x, 0.08, (tz0 + tz1) / 2));
+  tom.add(box(0.2, 0.09, tz1 - tz0 - 0.2, 0x8A6E52, x, 0.17, (tz0 + tz1) / 2));
+  tom.add(box(0.02, 0.02, tz1 - tz0, 0x111111, x + 0.05, 0.26, (tz0 + tz1) / 2));
+  const wire = new THREE.Mesh(new THREE.BoxGeometry(0.015, 0.015, tz1 - tz0), steel); wire.position.set(x, 2.6, (tz0 + tz1) / 2); tom.add(wire);
+  for (let z = tz0 + 0.35; z < tz1; z += 0.6) {
+    const st = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.03, 2.3, 6), mat(0x4F8A43)); st.position.set(x, 1.38, z); tom.add(st);
+    for (let k = 0; k < 6; k++) leaves.push([x + (k % 2 ? 0.17 : -0.17), 0.55 + k * 0.33, z, k]);
+    for (let k = 0; k < 3; k++) for (let j = 0; j < 4; j++) fruits.push([x + (k % 2 ? -0.13 : 0.13) + (j - 1.5) * 0.04, 0.7 + k * 0.45 - (j % 2) * 0.06, z + (j - 1.5) * 0.05, k]);
+  }
+});
+const leafM = new THREE.InstancedMesh(leafG, mat(0x6FA84E), leaves.length);
+leaves.forEach((p, i) => { dm.position.set(p[0], p[1], p[2]); dm.rotation.set(0, p[3] * 1.1, 0); dm.scale.set(1, 1, 1); dm.updateMatrix(); leafM.setMatrixAt(i, dm.matrix); });
+const fruitM = new THREE.InstancedMesh(fruitG, mat(0xD9483B), fruits.length);
+const fcol = new THREE.Color();
+fruits.forEach((p, i) => { dm.position.set(p[0], p[1], p[2]); dm.rotation.set(0, 0, 0); dm.updateMatrix(); fruitM.setMatrixAt(i, dm.matrix); fruitM.setColorAt(i, fcol.set(p[3] === 0 ? 0xD9483B : p[3] === 1 ? 0xE38B3A : 0x7FB24E)); });
+tom.add(leafM, fruitM); reg('tomate', tom);
+
+/* ===== frutilla en canaleta elevada ===== */
+const fru = new THREE.Group();
+const fz0 = 5.1, fz1 = 7.3, fruRows = [1.4, 2.8];
+const fl = [], ff = [];
+fruRows.forEach(x => {
+  fru.add(box(0.3, 0.16, fz1 - fz0, 0xE9ECEA, x, 1.05, (fz0 + fz1) / 2));
+  for (const z of [fz0 + 0.2, fz1 - 0.2]) { const l = new THREE.Mesh(new THREE.BoxGeometry(0.04, 1.0, 0.04), steel); l.position.set(x, 0.5, z); fru.add(l); }
+  for (let z = fz0 + 0.18; z < fz1; z += 0.27) { fl.push([x, 1.22, z]); ff.push([x + (Math.round(z * 10) % 2 ? 0.2 : -0.2), 1.0, z]); }
+});
+const flM = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(0.13, 1), mat(0x5E9E46), fl.length);
+fl.forEach((p, i) => { dm.position.set(...p); dm.rotation.set(0, i, 0); dm.scale.set(1, 0.7, 1); dm.updateMatrix(); flM.setMatrixAt(i, dm.matrix); });
+const ffM = new THREE.InstancedMesh(new THREE.SphereGeometry(0.045, 8, 6), mat(0xC2283D), ff.length);
+ff.forEach((p, i) => { dm.position.set(...p); dm.scale.set(1, 1.2, 1); dm.updateMatrix(); ffM.setMatrixAt(i, dm.matrix); });
+fru.add(flM, ffM); reg('frutilla', fru);
+
+/* ===== arándano en macetas ===== */
+const ara = new THREE.Group();
+const bushes = [], berries = [];
+[1.3, 2.9].forEach(x => { for (let z = 7.9; z < 9.7; z += 0.9) {
+  ara.add(cyl(0.22, 0.4, 0x222624, x, 0.2, z));
+  for (let k = 0; k < 7; k++) bushes.push([x + Math.cos(k * 0.9) * 0.18, 0.62 + (k % 3) * 0.16, z + Math.sin(k * 0.9) * 0.18]);
+  for (let k = 0; k < 10; k++) berries.push([x + Math.cos(k * 1.7) * 0.27, 0.5 + (k % 4) * 0.12, z + Math.sin(k * 1.7) * 0.27]);
+} });
+const bM = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(0.17, 1), mat(0x4E8A45), bushes.length);
+bushes.forEach((p, i) => { dm.position.set(...p); dm.scale.set(1, 1, 1); dm.rotation.set(0, i, 0); dm.updateMatrix(); bM.setMatrixAt(i, dm.matrix); });
+const brM = new THREE.InstancedMesh(new THREE.SphereGeometry(0.035, 8, 6), mat(0x3B4E9C), berries.length);
+berries.forEach((p, i) => { dm.position.set(...p); dm.updateMatrix(); brM.setMatrixAt(i, dm.matrix); });
+ara.add(bM, brM); reg('arandano', ara);
+
+/* ===== tuberías y flujos ===== */
+const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
+const FLOW_COL = { agua: 0x3F88A6, lluvia: 0x3F88A6, madres: 0x8A97A0, nft: 0x2E9A7A, riego: 0x2E9A7A, drenaje: 0x9A6B3C, descarte: 0xC2452F };
+const PATHS = {
+  agua: [[V3(-6.5, 0.12, -12.5), V3(-6.5, 0.12, -9.7), V3(2.0, 0.12, -9.7), V3(2.0, 0.12, -8.6), V3(2.1, 0.8, -8.6)]],
+  lluvia: [[V3(7.0, 0.12, -12.5), V3(7.0, 0.12, -9.9), V3(3.2, 0.12, -9.9), V3(3.2, 0.12, -8.4), V3(3.1, 0.8, -8.3)]],
+  madres: [[V3(-1.3, 1.25, -8.45), V3(-1.3, 1.45, -8.45), V3(2.15, 1.45, -8.45), V3(2.2, 1.2, -8.3)]],
+  nft: [[V3(2.0, 0.12, -7.6), V3(-0.4, 0.12, -7.6), V3(-0.4, 0.12, -5.3), V3(-0.4, 1.05, -5.3), V3(-3.6, 1.05, -5.3)],
+        ...chX.map(x => [V3(x, 1.02, -5.25), V3(x, 0.97, 9.3), V3(x, 0.82, 9.4)]),
+        [V3(-2.3, 0.78, 9.45), V3(-0.4, 0.12, 9.6), V3(-0.25, 0.12, 9.6), V3(-0.25, 0.12, -7.3), V3(2.0, 0.12, -7.3)]],
+  riego: [[V3(2.8, 0.12, -7.55), V3(0.35, 0.12, -7.55), V3(0.35, 0.12, 9.6)],
+          [V3(0.35, 0.12, -3.3), V3(0.75, 0.42, -3.3)],
+          ...[1.3, 2.9].map(x => [V3(0.35, 0.12, tz0), V3(x + 0.05, 0.27, tz0), V3(x + 0.05, 0.27, tz1)]),
+          ...[1.4, 2.8].map(x => [V3(0.35, 0.12, fz0), V3(x, 1.15, fz0), V3(x, 1.15, fz1)]),
+          ...[1.3, 2.9].map(x => [V3(0.35, 0.12, 7.6), V3(x, 0.45, 7.6), V3(x, 0.45, 9.6)])],
+  drenaje: [[V3(2.9, 0.1, tz1), V3(3.75, 0.1, tz1), V3(3.75, 0.1, -6.6), V3(3.0, 0.4, -6.6)],
+            [V3(3.75, 0.1, 9.6), V3(3.75, 0.1, tz1)],
+            [V3(2.6, 0.78, -6.6), V3(2.6, 0.95, -7.5)]],
+  descarte: [[V3(3.2, 0.12, -8.2), V3(5.6, 0.12, -8.2), V3(6.2, 0.1, -8.2)]]
+};
+const flowGroups = {}, particles = [];
+const sphG = new THREE.SphereGeometry(0.055, 8, 6);
+for (const [k, list] of Object.entries(PATHS)) {
+  const g = new THREE.Group(); const col = FLOW_COL[k];
+  const pipeM = new THREE.MeshStandardMaterial({ color: col, roughness: 0.6, transparent: true, opacity: 0.55 });
+  const dotM = new THREE.MeshBasicMaterial({ color: col });
+  list.forEach(pts => {
+    const cp = new THREE.CurvePath(); for (let i = 0; i < pts.length - 1; i++) cp.add(new THREE.LineCurve3(pts[i], pts[i + 1]));
+    const tube = new THREE.Mesh(new THREE.TubeGeometry(cp, Math.max(8, pts.length * 12), 0.03, 6, false), pipeM); g.add(tube);
+    const len = cp.getLength(), n = Math.max(2, Math.round(len / 0.7));
+    for (let i = 0; i < n; i++) { const d = new THREE.Mesh(sphG, dotM); g.add(d); particles.push({ d, cp, off: i / n, speed: 0.55 / len, key: k }); }
+  });
+  flowGroups[k] = { g, pipeM, dotM }; scene.add(g);
+}
+
+/* ===== resaltado ===== */
+let active = null, t0 = performance.now();
+function setDim(o, dim) {
+  o.traverse(m => { if (!m.isMesh && !m.isSprite) return; const ms = Array.isArray(m.material) ? m.material : [m.material];
+    ms.forEach(mt => { const b = mt.userData.base || { op: 1, tr: false }; mt.transparent = dim ? true : b.tr; mt.opacity = dim ? Math.min(b.op, 0.16) : b.op; mt.depthWrite = !dim; mt.needsUpdate = true; if (mt.emissive && b.em) mt.emissive.copy(b.em); }); });
+}
+function select(item, stationId) {
+  if (!ready) return;
+  active = item; t0 = performance.now();
+  for (const [k, arr] of Object.entries(REG)) arr.forEach(o => setDim(o, !!item && !item.keys.includes(k)));
+  for (const [k, f] of Object.entries(flowGroups)) { const on = !item || item.paths.includes(k); f.pipeM.opacity = on ? 0.55 : 0.08; f.dotM.transparent = !on; f.dotM.opacity = on ? 1 : 0.1; }
+  badges.forEach(b => { b.el.classList.toggle('on', b.st.id === stationId); b.el.classList.toggle('dim', !!item && !item.keys.some(k => b.st.keys.includes(k))); });
+}
+
+/* ===== insignias numeradas ===== */
+const badges = STATIONS.map(st => {
+  const el = document.createElement('button'); el.className = 'badge'; el.textContent = st.id; el.setAttribute('aria-label', `Estación ${st.id}: ${st.title}`);
+  el.addEventListener('click', () => openStation(st.id)); stage.appendChild(el);
+  return { el, st, v: new THREE.Vector3(...st.pos) };
+});
+
+/* ===== cámara ===== */
+let tween = null;
+function goView(name, focus) {
+  if (!ready) return;
+  const v = VIEWS[name] || VIEWS.general;
+  let p = new THREE.Vector3(...v.p), t = new THREE.Vector3(...v.t);
+  if (focus) { const OFF = { general: [-12, 11, -15], cabezal: [5.5, 4.2, -7], nft: [-7.5, 5, -4], sustrato: [7.5, 4.5, -3.5] }; t = new THREE.Vector3(...focus); t.y = Math.min(t.y, 1.4); p = t.clone().add(new THREE.Vector3(...(OFF[name] || OFF.general))); }
+  tween = { p0: camera.position.clone(), t0: controls.target.clone(), p1: p, t1: t, s: performance.now(), dur: 900 };
+  document.querySelectorAll('[data-view]').forEach(b => b.setAttribute('aria-pressed', b.dataset.view === name && !focus));
+}
+document.querySelectorAll('[data-view]').forEach(b => b.addEventListener('click', () => goView(b.dataset.view)));
+document.getElementById('resetBtn').addEventListener('click', () => { select(null, null); renderRecList(); renderInt(null); goView('general'); });
+let flows = true;
+document.getElementById('flowBtn').addEventListener('click', e => { flows = !flows; e.currentTarget.setAttribute('aria-pressed', flows); particles.forEach(p => p.d.visible = flows); });
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* clic en objetos */
+const ray = new THREE.Raycaster(), mouse = new THREE.Vector2(); let down0 = null;
+canvas.addEventListener('pointerdown', e => { down0 = [e.clientX, e.clientY]; document.getElementById('hint').hidden = true; });
+canvas.addEventListener('pointerup', e => {
+  if (!down0 || Math.hypot(e.clientX - down0[0], e.clientY - down0[1]) > 5) return;
+  const r = canvas.getBoundingClientRect(); mouse.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+  ray.setFromCamera(mouse, camera);
+  const hit = ray.intersectObjects(Object.values(REG).flat(), true).find(h => { let o = h.object; while (o && !o.userData.key) o = o.parent; return o && o.userData.key; });
+  if (!hit) return; let o = hit.object; while (!o.userData.key) o = o.parent;
+  const st = STATIONS.find(s => s.keys.includes(o.userData.key)); if (st) openStation(st.id);
+});
+
+function resize() { const r = stage.getBoundingClientRect(); renderer.setSize(r.width, r.height, false); camera.aspect = r.width / Math.max(1, r.height); camera.updateProjectionMatrix(); }
+new ResizeObserver(resize).observe(stage); resize();
+
+const tmp = new THREE.Vector3();
+function frame(now) {
+  if (tween) { const k = Math.min(1, (now - tween.s) / tween.dur), e = k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+    camera.position.lerpVectors(tween.p0, tween.p1, e); controls.target.lerpVectors(tween.t0, tween.t1, e); if (k >= 1) tween = null; }
+  controls.update();
+  if (flows) { const tt = reduce ? 0 : now / 1000; particles.forEach(p => { p.cp.getPointAt(((tt * p.speed + p.off) % 1 + 1) % 1, tmp); p.d.position.copy(tmp); }); }
+  if (active) { const pulse = 0.35 + 0.25 * Math.sin((now - t0) / 260);
+    active.keys.forEach(k => (REG[k] || []).forEach(o => o.traverse(m => { if (m.isMesh && m.material.emissive) m.material.emissive.setRGB(pulse * 0.55, pulse * 0.32, pulse * 0.12); }))); }
+  renderer.render(scene, camera);
+  const r = stage.getBoundingClientRect();
+  badges.forEach(b => { tmp.copy(b.v).project(camera); const vis = tmp.z < 1 && Math.abs(tmp.x) < 1.05 && Math.abs(tmp.y) < 1.05;
+    b.el.hidden = !vis; if (vis) { b.el.style.left = ((tmp.x * 0.5 + 0.5) * r.width) + 'px'; b.el.style.top = ((-tmp.y * 0.5 + 0.5) * r.height) + 'px'; } });
+  requestAnimationFrame(frame);
+}
+loading.hidden = true;
+ready = true;
+requestAnimationFrame(frame);
+window.__inv = { openStation, openInter, goView, select };
+})();
+</script>
+
+</body>
+</html>
