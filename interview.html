@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Thesis in 3D</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* VOICE: calm, scientific, meeting-ready; numbers from the thesis only
+   IDEA: a model landscape on a bench: greenhouse, field, vertical farm, neural net, joined by one data path
+   PICTURE: full-screen orbitable 3D scene with live flows (heat, vapour, reflectance, air, pulses)
+   COLOUR and TYPE: night-green ground; amber=climate, leaf=crop, LED magenta=CLIMA, cyan=surrogate; Sora + Inter
+   LAYOUT: scene fills screen, results card right (bottom sheet on phones), step bar at the foot */
+:root{color-scheme:dark;--bg:#0b1714;--ink:#eef5ef;--mut:#a7bbb1;--line:rgba(255,255,255,.09);--c1:#ffb547;--c2:#93dd6c;--c3:#ff63d4;--c4:#5cc8ff}
+*{box-sizing:border-box;min-width:0}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Inter,system-ui,sans-serif;overflow:hidden}
+#stage{position:fixed;inset:0}
+#stage canvas{display:block;width:100%;height:100%;cursor:grab}
+header{position:fixed;left:20px;top:16px;max-width:min(560px,60vw);pointer-events:none}
+header b{display:block;font:600 19px/1.2 Sora,sans-serif;text-wrap:balance}
+header span{font-size:13px;color:var(--mut)}
+#panel{position:fixed;right:18px;top:18px;bottom:88px;width:min(410px,38vw);background:rgba(9,20,17,.88);backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:16px;padding:22px 22px 18px;overflow:auto;transition:opacity .35s,transform .35s}
+#panel.hide{opacity:0;transform:translateX(30px);pointer-events:none}
+.k{font-size:13px;color:var(--mut);margin:0 0 6px}
+#panel h2{font:600 26px/1.12 Sora,sans-serif;margin:0 0 12px;text-wrap:balance}
+.q{margin:0 0 16px;color:#d9e7de}
+.stats{display:grid;gap:10px;margin:0 0 16px}
+.st{border-top:1px solid var(--line);padding-top:9px}
+.st b{display:block;font:600 24px/1.1 Sora,sans-serif;color:var(--acc);white-space:nowrap}
+.st span{font-size:13.5px;color:var(--mut)}
+#panel h3{font:600 14px/1.3 Inter,sans-serif;margin:14px 0 6px;color:var(--acc)}
+#panel ul{margin:0;padding-left:18px}
+#panel li{margin:0 0 5px;font-size:15px}
+.take{background:rgba(255,255,255,.05);border-radius:10px;padding:10px 12px;margin:14px 0 0;font-size:15px}
+.lim{font-size:14px;color:var(--mut);margin:12px 0 0}
+.status{font-size:13px;margin:12px 0 0;color:var(--mut)}
+.chain li{margin-bottom:8px}
+.chain i{font-style:normal;font-weight:600}
+nav{position:fixed;left:0;right:0;bottom:16px;display:flex;justify-content:center;gap:8px;flex-wrap:wrap;padding:0 12px}
+nav button,.tb{font:500 14px Inter,sans-serif;color:var(--ink);background:rgba(9,20,17,.86);border:1px solid var(--line);border-radius:999px;min-height:44px;padding:0 16px 0 8px;display:flex;align-items:center;gap:8px;cursor:pointer}
+nav button em{font-style:normal;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-weight:600;background:#22332d;color:var(--ink)}
+nav button[aria-current=true]{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc) inset}
+nav button[aria-current=true] em{background:var(--acc);color:#0b1714}
+button:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.tb{padding:0 14px}
+#labels{position:fixed;inset:0;pointer-events:none}
+.lab{position:absolute;transform:translate(-50%,-100%);white-space:nowrap;font:600 13px Inter,sans-serif;padding:5px 10px 5px 5px;border-radius:999px;background:rgba(9,20,17,.82);border:1px solid var(--line);display:flex;gap:7px;align-items:center;pointer-events:auto;cursor:pointer;color:var(--ink)}
+.lab em{font-style:normal;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;color:#0b1714}
+.sub{position:absolute;transform:translate(-50%,-50%);font:500 12.5px Inter,sans-serif;color:#d7e5dc;background:rgba(0,0,0,.45);padding:2px 8px;border-radius:6px;white-space:nowrap;transition:opacity .4s}
+#hint{position:fixed;left:20px;top:100px;font-size:13px;color:var(--mut)}
+#nogl{position:fixed;inset:0;display:grid;place-items:center;padding:30px;text-align:center}#nogl[hidden]{display:none}
+.ctl{border:1px solid var(--line);border-radius:12px;padding:4px 14px 12px;margin:0 0 16px;background:rgba(255,255,255,.03)}
+.rg{display:block;margin:8px 0 2px}.rg span{display:flex;justify-content:space-between;font-size:14px;color:#d9e7de}.rg output{color:var(--acc);font-weight:600;white-space:nowrap}
+.rg input{width:100%;accent-color:var(--acc);height:30px;margin:0}
+.seg{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 0}.seg button{font:500 14px Inter,sans-serif;color:var(--ink);background:#1b2b26;border:1px solid var(--line);border-radius:999px;min-height:38px;padding:0 13px;cursor:pointer}
+.seg button[aria-pressed=true]{background:var(--acc);color:#0b1714;border-color:var(--acc)}
+.ro{font-size:14px;margin:12px 0 0;color:#d9e7de}.note{font-size:12.5px;color:var(--mut);margin:6px 0 0}
+@media(max-width:900px){#hint{display:none}}
+@media(max-width:760px){
+ header{max-width:calc(100vw - 40px)}header b{font-size:16px}
+ #panel{left:10px;right:10px;top:auto;bottom:122px;width:auto;max-height:42vh;padding:16px}
+ #panel h2{font-size:21px}.st b{font-size:20px}
+ nav{gap:6px}nav button{padding:0 10px 0 6px;font-size:13px}nav button span{display:none}nav button em{width:30px;height:30px}
+}
+@media(prefers-reduced-motion:reduce){#panel{transition:none}}
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<div id="labels"></div>
+<header><b>Mechanistic modelling and neural surrogates for predicting greenhouse climate and crop performance</b><span>Hans Chaparro · PhD in Agricultural Sciences · Pontificia Universidad Católica de Chile</span></header>
+<aside id="panel" aria-live="polite"></aside>
+<nav id="steps" aria-label="Objectives"></nav>
+<div id="hint">Drag to orbit · scroll to zoom · ← → to step · H hides the card</div>
+<div id="nogl" hidden><p>This browser could not start 3D graphics (WebGL). The results card and step buttons still work.</p></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+{
+const $=s=>document.querySelector(s);
+const C=['#ffb547','#ffb547','#93dd6c','#ff63d4','#5cc8ff','#ffb547'];
+const STEPS=[
+{nav:'Overview',k:'PhD thesis · PUC Chile · defended October 2026',t:'Predicting climate and yield before a greenhouse is built',
+ q:'Greenhouse design requires anticipating indoor climate and crop yield at sites where neither has been measured.',
+ body:'<p>The dissertation develops and evaluates a prediction framework that integrates mechanistic modelling and machine learning. Objectives 1–3 test process-based models against measurements; Objective 4 trains neural surrogates of a greenhouse simulator so that designs can be screened quickly.</p><ol class="chain"><li><i style="color:var(--c1)">Climate.</i> Validate a mechanistic climate model in four Chilean greenhouses.</li><li><i style="color:var(--c2)">Crop.</i> Adapt a growth model to open-field processing tomato and combine it with canopy reflectance.</li><li><i style="color:var(--c3)">Coupling.</i> Couple climate control and lettuce growth in a vertical farm (CLIMA).</li><li><i style="color:var(--c4)">Surrogate.</i> Train neural surrogates that predict yield and interior climate for any site and typology.</li></ol>',
+ take:'Two references, kept apart: measurements establish physical validity (Objectives 1–3); the simulator is the reference for emulation fidelity (Objective 4).'},
+{nav:'Climate',k:'Objective 1 · Chapter 3',t:'Validating a mechanistic greenhouse climate model',
+ q:'How well does an energy- and vapour-balance model reproduce indoor climate across contrasting greenhouses?',
+ stats:[['2.70–3.12 °C','air-temperature RMSE over the full period'],['9.45–21.18 pp','relative-humidity RMSE'],['4','greenhouse configurations with diverse covers and climate-control strategies, Mediterranean and arid Chile']],
+ how:['Indoor temperature and relative humidity measured in four greenhouse configurations','Mechanistic energy and vapour balances solved as a stiff ODE system (Python, SciPy BDF)','Day and night biases examined, not only full-period statistics'],
+ take:'Temperature and humidity need separate evaluation. Performance depends on the enclosure and the control regime, and contrasting day–night biases can hide inside a full-period statistic.',
+ lim:'Crop transpiration was strongly suppressed in these trials. The next requirement is evaluation with an active, transpiring canopy.',
+ st:'Smart Agricultural Technology · under review'},
+{nav:'Crop',k:'Objective 2 · Chapter 4 · with Università di Bologna',t:'Mechanistic prior plus canopy reflectance for tomato LAI',
+ q:'Does a climate-driven growth model, adapted to open-field processing tomato, improve leaf area index estimation from reflectance under variable nitrogen?',
+ stats:[['21.8% → 17.7%','LAI error (range-normalised RMSE): reflectance alone vs. fusion with simulated LAI'],['0.22 m² m⁻²','LAI RMSE, 2023 calibration season (reference treatment)'],['0.68 m² m⁻²','LAI RMSE in the additional 2022 season']],
+ how:['Stage 1: adapt a mechanistic tomato model and evaluate organ dry mass and LAI','Stage 2, serial hybrid: the simulated LAI trajectory enters as a predictor next to canopy reflectance','Contrasting nitrogen treatments over two seasons'],
+ take:'The model supplies the developmental trajectory and reflectance supplies plot-level departures from it. Together they estimated LAI better than reflectance alone.',
+ lim:'There is no explicit mechanistic nitrogen-stress response yet, and the full calibration and feature-selection procedure still needs an untouched season.',
+ st:'Computers and Electronics in Agriculture · submitted'},
+{nav:'CLIMA',k:'Objective 3 · Chapter 5 · AlmaVFarm, Università di Bologna',t:'CLIMA: HVAC, indoor climate and lettuce growth in one model',
+ q:'Can one dynamic calculation predict indoor climate, electricity use and crop development in a vertical farm?',
+ stats:[['0.71–1.07 °C','air-temperature RMSE across two harvest cycles'],['+3.2% / −12.3%','dry mass error at day 21 after transplanting'],['≈ −6.8%','aggregate HVAC energy error, second experiment'],['7.21–7.98 pp','relative-humidity RMSE']],
+ how:['Leaf area drives transpiration, which sets the room moisture load and HVAC operation','Simulated indoor temperature feeds back into crop growth','Evaluated over two cycles in the same facility under different outdoor forcing'],
+ take:'Harvest biomass alone is not enough: the canopy trajectory, indoor climate and energy have to be evaluated together.',
+ lim:'Underestimation is larger early in development, and transfer to other facilities has not been tested.',
+ st:'Computers and Electronics in Agriculture · submitted'},
+{nav:'Surrogate',ctl:1,k:'Objective 4 · Chapter 6',t:'Neural surrogates: yield and interior climate for any site and typology',
+ q:'Can a neural network predict crop yield and interior climate across locations fast enough to compare greenhouse typologies and scenarios before construction?',
+ stats:[['14,000','complete crop-cycle simulations: 200 designs × 7 locations, weather 2014–2023'],['R² 0.99 / 0.96','yield for unseen designs (lettuce / tomato)'],['R² ≥ 0.96','maximum interior temperature for unseen designs'],['up to +110%','tomato yield with polycarbonate cover in cold climates']],
+ how:['Choose a site: hourly weather (air temperature, global radiation, humidity, wind, sky temperature) is taken from ERA5-Land, a reanalysis that assimilates satellite observations, and summarised into climate features','Choose a typology: geometry, cover optical and thermal properties, maximum ventilation','The surrogate returns end-of-cycle yield and aggregate interior climate without re-integrating the simulator, so many typologies × sites × scenarios are screened in one pass','Separate surrogates for lettuce and tomato, validated by withholding complete design groups and, separately, whole locations'],
+ take:'Fast screening reveals the design levers: the cover is climate-dependent, decisive in cold, clear climates and almost immaterial in warm ones. Selected designs then go back to the mechanistic model for verification.',
+ lim:'Transfer to an unseen location is weaker (yield R² 0.88 for lettuce, −0.78 for tomato), and ERA5-Land is used without bias correction, which matters at high-elevation sites such as Bogotá.',
+ st:'Manuscript submitted'},
+{nav:'Next',k:'Beyond the thesis',t:'What the evidence asks for next',
+ q:'Each objective ends with a defined validity boundary, and each boundary points to the next experiment.',
+ how:['Evaluate greenhouse climate with an active crop canopy','Test the complete hybrid crop-estimation procedure on an untouched season','Quantify the CLIMA coupling effect across equipment sizing','Test surrogate transfer when both climate and design are unseen'],
+ take:'For discussion: the serial hybrid of Objective 2 (process model as prior, remote sensing as observation) carries directly to open-field agronomy, and the surrogate workflow carries to multi-site scenario screening.',
+ lim:'Conclusion of the dissertation: mechanistic and neural models can jointly support the analysis of crop production environments when physical validation, emulation fidelity and applicability are assessed separately.'}
+];
+
+/* ---------- panel + nav ---------- */
+const panel=$('#panel'),nav=$('#steps');
+const GH={w:8,l:20,e:3,r:1.5,v:40,cover:'Polyethylene',crop:'Tomato'};
+const SL=[['w','Width',6,12,.5,'m'],['l','Length',10,30,1,'m'],['e','Eave height',2,5,.1,'m'],['r','Ridge rise',.5,3,.1,'m'],['v','Roof vent opening',0,100,5,'%']];
+const segH=(k,opts)=>`<div class="seg" data-k="${k}">${opts.map(x=>`<button type="button" aria-pressed="${GH[k]===x}">${x}</button>`).join('')}</div>`;
+function ctlHTML(){return '<div class="ctl"><h3>Try a typology</h3>'+SL.map(([k,n,a,b,st,u])=>`<label class="rg"><span>${n}<output id="o_${k}">${GH[k]} ${u}</output></span><input type="range" id="r_${k}" min="${a}" max="${b}" step="${st}" value="${GH[k]}"></label>`).join('')+
+ segH('cover',['Polyethylene','Polycarbonate','Glass'])+segH('crop',['Lettuce','Tomato'])+'<p class="ro" id="ro"></p><p class="note">Illustrative geometry. Descriptors like these, together with site climate, are the surrogate inputs; this page does not compute predictions.</p></div>'}
+function ro(){const A=GH.w*GH.l,V=GH.l*(GH.w*GH.e+GH.w*GH.r/2);$('#ro').textContent=`Floor ${A.toFixed(0)} m² · volume ${V.toFixed(0)} m³ · volume/floor ${(V/A).toFixed(2)} m`}
+function bindCtl(){SL.forEach(([k,n,a,b,st,u])=>{const i=$('#r_'+k);i.addEventListener('input',()=>{GH[k]=+i.value;$('#o_'+k).textContent=GH[k]+' '+u;ro();if(window.ghBuild)ghBuild(GH)})});
+ panel.querySelectorAll('.seg').forEach(sg=>sg.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;GH[sg.dataset.k]=b.textContent;sg.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b));if(window.ghBuild)ghBuild(GH)}));ro()}
+nav.innerHTML=STEPS.map((s,i)=>`<button type="button" data-i="${i}"><em>${i===0?'◎':i===5?'→':i}</em><span>${s.nav}</span></button>`).join('')+'<button type="button" class="tb" id="tog">Hide card</button>';
+function card(i){
+ const s=STEPS[i];document.documentElement.style.setProperty('--acc',C[i]);
+ panel.innerHTML=`<p class="k">${s.k}</p><h2>${s.t}</h2><p class="q">${s.q}</p>`+(s.ctl?ctlHTML():'')+
+ (s.stats?`<div class="stats">${s.stats.map(x=>`<div class="st"><b>${x[0]}</b><span>${x[1]}</span></div>`).join('')}</div>`:'')+
+ (s.body||'')+(s.how?`<h3>${i===5?'Immediate priorities':'Approach'}</h3><ul>${s.how.map(x=>`<li>${x}</li>`).join('')}</ul>`:'')+
+ `<p class="take">${s.take}</p>`+(s.lim?`<p class="lim">${i===5?'':'<b>Validity boundary.</b> '}${s.lim}</p>`:'')+(s.st?`<p class="status">${s.st}</p>`:'');
+ panel.scrollTop=0;if(s.ctl)bindCtl();
+ nav.querySelectorAll('button').forEach(b=>b.setAttribute('aria-current',+b.dataset.i===i));
+}
+let cur=0,go=i=>{cur=(i+STEPS.length)%STEPS.length;card(cur);if(window.fly)fly(cur)};
+nav.addEventListener('click',e=>{const b=e.target.closest('button[data-i]');if(b)go(+b.dataset.i)});
+const tog=$('#tog');
+const togg=()=>{panel.classList.toggle('hide');tog.textContent=panel.classList.contains('hide')?'Show card':'Hide card'};
+tog.addEventListener('click',togg);
+addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;if(e.key==='ArrowRight')go(cur+1);else if(e.key==='ArrowLeft')go(cur-1);else if(e.key==='h'||e.key==='H')togg()});
+card(0);
+
+/* ---------- 3D ---------- */
+const RM=matchMedia('(prefers-reduced-motion:reduce)').matches;
+let R;try{R=new THREE.WebGLRenderer({antialias:true});}catch(e){R=null}
+if(!R||!window.THREE){$('#nogl').hidden=false;}else{
+const stage=$('#stage');R.setPixelRatio(Math.min(devicePixelRatio,2));R.shadowMap.enabled=true;R.shadowMap.type=THREE.PCFSoftShadowMap;
+stage.appendChild(R.domElement);
+const scene=new THREE.Scene();scene.background=new THREE.Color('#0b1714');scene.fog=new THREE.Fog('#0b1714',42,95);
+const cam=new THREE.PerspectiveCamera(42,1,.1,300);cam.position.set(0,22,32);
+const ctl=new THREE.OrbitControls(cam,R.domElement);ctl.enableDamping=true;ctl.maxPolarAngle=1.45;ctl.minDistance=5;ctl.maxDistance=70;ctl.target.set(0,1.5,-1);
+scene.add(new THREE.HemisphereLight('#cfe9ff','#1a2b24',.6));
+const sunL=new THREE.DirectionalLight('#fff1d6',1.05);sunL.position.set(-14,26,14);sunL.castShadow=true;sunL.shadow.mapSize.set(2048,2048);
+Object.assign(sunL.shadow.camera,{left:-30,right:30,top:20,bottom:-20,near:1,far:80});scene.add(sunL);
+const M=(c,o={})=>new THREE.MeshStandardMaterial(Object.assign({color:c,roughness:.75,metalness:.05},o));
+const glow=(c,op=.9)=>new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:op});
+const glass=c=>new THREE.MeshStandardMaterial({color:c,transparent:true,opacity:.2,roughness:.1,metalness:0,side:THREE.DoubleSide,depthWrite:false});
+const box=(w,h,d,m)=>new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);
+const sph=(r,m,s=16)=>new THREE.Mesh(new THREE.SphereGeometry(r,s,s*.75|0),m);
+const ticks=[];
+// round particle texture
+const cv=document.createElement('canvas');cv.width=cv.height=64;const g2=cv.getContext('2d');const gr=g2.createRadialGradient(32,32,0,32,32,32);
+gr.addColorStop(0,'rgba(255,255,255,1)');gr.addColorStop(.4,'rgba(255,255,255,.7)');gr.addColorStop(1,'rgba(255,255,255,0)');g2.fillStyle=gr;g2.fillRect(0,0,64,64);
+const dot=new THREE.CanvasTexture(cv);
+function pts(n,color,size){const geo=new THREE.BufferGeometry(),p=new Float32Array(n*3);geo.setAttribute('position',new THREE.BufferAttribute(p,3));
+ const o=new THREE.Points(geo,new THREE.PointsMaterial({color,size,map:dot,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending}));return{o,p,geo,n}}
+
+// ground
+const ground=new THREE.Mesh(new THREE.CircleGeometry(70,64),M('#10261f',{roughness:1}));ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
+const P=[null,new THREE.Vector3(-15,0,3),new THREE.Vector3(-5.5,0,-5.5),new THREE.Vector3(5.5,0,-5.5),new THREE.Vector3(15,0,3)];
+const groups=[null];const rings=[];
+for(let i=1;i<=4;i++){const g=new THREE.Group();g.position.copy(P[i]);g.userData.step=i;scene.add(g);groups.push(g);
+ const pad=new THREE.Mesh(new THREE.CylinderGeometry(6.2,6.4,.16,64),M('#173a2f',{roughness:.95}));pad.position.y=.08;pad.receiveShadow=true;g.add(pad);
+ const ring=new THREE.Mesh(new THREE.TorusGeometry(6.3,.05,8,96),glow(C[i],.0));ring.rotation.x=Math.PI/2;ring.position.y=.18;g.add(ring);rings.push([i,ring]);}
+
+/* station 1: greenhouse */
+{const g=groups[1];
+ const fl=box(8,.1,5,M('#5d6b66'));fl.position.y=.2;fl.receiveShadow=true;g.add(fl);
+ const steel=M('#c9d3d6',{metalness:.6,roughness:.35});
+ for(let x=-4;x<=4.01;x+=1.6){const a=new THREE.Mesh(new THREE.TorusGeometry(2.5,.045,6,28,Math.PI),steel);a.rotation.y=Math.PI/2;a.position.set(x,1.45,0);a.castShadow=true;g.add(a);
+  for(const z of[-2.5,2.5]){const p=new THREE.Mesh(new THREE.CylinderGeometry(.045,.045,1.25,6),steel);p.position.set(x,.83,z);g.add(p)}}
+ const roof=new THREE.Mesh(new THREE.CylinderGeometry(2.5,2.5,8,40,1,true,0,Math.PI),glass('#dff2ff'));roof.rotation.z=Math.PI/2;roof.position.y=1.45;g.add(roof);
+ for(const z of[-2.5,2.5]){const w=new THREE.Mesh(new THREE.PlaneGeometry(8,1.25),glass('#dff2ff'));w.position.set(0,.83,z);g.add(w)}
+ const leaf=M('#6fc25a');for(let r=-1.6;r<=1.61;r+=.8)for(let x=-3.4;x<=3.41;x+=.55){const l=sph(.2,leaf,10);l.scale.y=.6;l.position.set(x,.36,r);l.castShadow=true;g.add(l)}
+ const sun=sph(.9,glow('#ffd36b',1),24);sun.position.set(-4,8.5,-4);g.add(sun);
+ const halo=sph(1.5,glow('#ffb547',.18),24);halo.position.copy(sun.position);g.add(halo);
+ for(let k=0;k<5;k++){const end=new THREE.Vector3(-3+k*1.6,3.2,-1+k*.4);const d=end.clone().sub(sun.position);const len=d.length();
+  const ray=new THREE.Mesh(new THREE.CylinderGeometry(.03,.03,len,5),glow('#ffd36b',.35));ray.position.copy(sun.position).add(d.clone().multiplyScalar(.5));
+  ray.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),d.normalize());g.add(ray)}
+ const pole=new THREE.Mesh(new THREE.CylinderGeometry(.04,.04,1.6,6),steel);pole.position.set(1.2,1,.0);g.add(pole);
+ const led=sph(.12,glow('#7dffb0',1));led.position.set(1.2,1.85,0);g.add(led);
+ const heat=pts(70,'#ff7a45',.34),vap=pts(45,'#7fc9ff',.3);g.add(heat.o,vap.o);
+ const seed=(a,i,y0,y1,sx,sz)=>{a.p[i*3]=(Math.random()*2-1)*sx;a.p[i*3+1]=y0+Math.random()*(y1-y0);a.p[i*3+2]=(Math.random()*2-1)*sz};
+ for(let i=0;i<heat.n;i++)seed(heat,i,.3,3.6,3.6,2);for(let i=0;i<vap.n;i++)seed(vap,i,3.9,7,.9,1.2);
+ ticks.push((t,dt)=>{led.material.opacity=.4+.6*(Math.sin(t*4)>0);halo.scale.setScalar(1+.06*Math.sin(t*2));
+  for(let i=0;i<heat.n;i++){heat.p[i*3+1]+=dt*.6;if(heat.p[i*3+1]>3.7)seed(heat,i,.3,.5,3.6,2)}
+  for(let i=0;i<vap.n;i++){vap.p[i*3+1]+=dt*.9;vap.p[i*3]+=dt*.25;if(vap.p[i*3+1]>7.5)seed(vap,i,3.9,4.1,.9,1.2)}
+  heat.geo.attributes.position.needsUpdate=vap.geo.attributes.position.needsUpdate=true});}
+
+/* station 2: field tomato + drone + LAI prior */
+{const g=groups[2];
+ const soil=box(9,.12,6,M('#5a3f2b',{roughness:1}));soil.position.y=.2;soil.receiveShadow=true;g.add(soil);
+ const stem=M('#4f7d33'),fruit=M('#e2422f',{roughness:.5}),sg=new THREE.SphereGeometry(.26,10,8),fg=new THREE.SphereGeometry(.07,8,6);
+ const plots=[['#b9c95a',.62],['#86bf4c',.85],['#4f9e3c',1.08]];
+ plots.forEach(([c,v],pi)=>{const mat=M(c);for(let r=0;r<4;r++)for(let k=0;k<6;k++){const x=-3.9+pi*3+k*.5,z=-2.2+r*1.3;
+  const f=new THREE.Mesh(sg,mat);f.scale.set(v,v*.75,v);f.position.set(x,.3+.2*v,z);f.castShadow=true;g.add(f);
+  for(let q=0;q<3;q++){const fr=new THREE.Mesh(fg,fruit);fr.position.set(x+(Math.random()-.5)*.35*v,.32,z+(Math.random()-.5)*.35*v);g.add(fr)}}
+  const tag=box(2.6,.02,.08,glow(c,.9));tag.position.set(-2.65+pi*3,.27,2.85);g.add(tag)});
+ const drone=new THREE.Group();drone.position.set(0,4.4,.2);g.add(drone);
+ drone.add(box(.6,.16,.6,M('#e9eef0',{metalness:.3})));const rot=[];
+ for(const[a,b]of[[1,1],[1,-1],[-1,1],[-1,-1]]){const arm=box(.62,.05,.06,M('#333'));arm.position.set(a*.3,0,b*.3);arm.rotation.y=a*b*Math.PI/4;drone.add(arm);
+  const r=new THREE.Mesh(new THREE.CylinderGeometry(.24,.24,.01,16),glow('#ffffff',.35));r.position.set(a*.48,.08,b*.48);drone.add(r);rot.push(r)}
+ const beam=new THREE.Mesh(new THREE.ConeGeometry(1.35,3.9,40,1,true),new THREE.MeshBasicMaterial({color:'#7ef0c8',transparent:true,opacity:.14,side:THREE.DoubleSide,depthWrite:false,blending:THREE.AdditiveBlending}));
+ beam.position.y=-2.02;drone.add(beam);
+ const foot=new THREE.Mesh(new THREE.RingGeometry(1.1,1.38,48),glow('#7ef0c8',.7));foot.rotation.x=-Math.PI/2;foot.position.set(0,.3,.2);g.add(foot);
+ // floating LAI chart: model prior (line) + observations (dots)
+ const ch=new THREE.Group();ch.position.set(0,1.2,-3.9);g.add(ch);
+ const fr=new THREE.Mesh(new THREE.PlaneGeometry(7.6,3.2),new THREE.MeshBasicMaterial({color:'#0a1512',transparent:true,opacity:.7,side:THREE.DoubleSide}));fr.position.set(0,1.6,0);ch.add(fr);
+ const ax=glow('#a7bbb1',.8);const xa=box(7,.03,.03,ax);xa.position.set(0,.35,.02);ch.add(xa);const ya=box(.03,2.8,.03,ax);ya.position.set(-3.5,1.7,.02);ch.add(ya);
+ const lai=x=>.4+2.4/(1+Math.exp(-1.5*(x+.4)));const cp=[];for(let x=-3.4;x<=3.4;x+=.2)cp.push(new THREE.Vector3(x,lai(x),.05));
+ ch.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(cp),80,.045,6),glow('#93dd6c',1)));
+ const ob=glow('#ffffff',1);[-2.8,-1.6,-.6,.4,1.5,2.7].forEach((x,j)=>{const o=sph(.09,ob,10);o.position.set(x,lai(x)+[.12,-.1,.18,-.15,.1,-.08][j],.07);ch.add(o)});
+ ticks.push((t)=>{const x=Math.sin(t*.45)*3.1;drone.position.x=x;drone.position.y=4.4+Math.sin(t*1.7)*.12;foot.position.x=x;
+  rot.forEach((r,k)=>r.rotation.y=t*30+k);beam.material.opacity=.11+.05*Math.sin(t*3)});}
+
+/* station 3: vertical farm (CLIMA) */
+{const g=groups[3];
+ const W=7,D=4.4,H=4.4;const room=new THREE.Group();room.position.y=.16;g.add(room);
+ const edges=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(W,H,D)),new THREE.LineBasicMaterial({color:'#9fb3ab',transparent:true,opacity:.55}));edges.position.y=H/2;room.add(edges);
+ const back=new THREE.Mesh(new THREE.PlaneGeometry(W,H),glass('#c7d6e8'));back.position.set(0,H/2,-D/2);room.add(back);
+ const side=new THREE.Mesh(new THREE.PlaneGeometry(D,H),glass('#c7d6e8'));side.rotation.y=Math.PI/2;side.position.set(-W/2,H/2,0);room.add(side);
+ const fl=box(W,.06,D,M('#3a4a47'));fl.position.y=.03;fl.receiveShadow=true;room.add(fl);
+ const shelfM=M('#cfd8dc',{metalness:.4,roughness:.4}),ledM=new THREE.MeshBasicMaterial({color:'#ff7ae0'});
+ const lg=new THREE.SphereGeometry(.17,10,8);const lett=new THREE.InstancedMesh(lg,M('#9be07a'),2*4*14);let n=0;const dm=new THREE.Object3D();const plantPos=[];
+ for(const z of[-1.05,1.05])for(let ti=0;ti<4;ti++){const y=.45+ti*.95;const sh=box(4.2,.05,1.1,shelfM);sh.position.set(-.9,y,z);sh.castShadow=true;room.add(sh);
+  for(const dz of[-.3,.3]){const l=box(4.0,.035,.09,ledM);l.position.set(-.9,y+.78,z+dz);room.add(l)}
+  for(let k=0;k<7;k++)for(const dz of[-.25,.25]){dm.position.set(-2.75+k*.62,y+.13,z+dz);const s=.8+Math.random()*.4;dm.scale.set(s,s*.55,s);dm.updateMatrix();lett.setMatrixAt(n++,dm.matrix);plantPos.push([-2.75+k*.62,y+.13,z+dz])}}
+ for(const z of[-1.05,1.05])for(const x of[-3,1.2]){const p=new THREE.Mesh(new THREE.CylinderGeometry(.035,.035,3.6,6),shelfM);p.position.set(x,1.8,z);room.add(p)}
+ lett.castShadow=true;room.add(lett);
+ const pink=new THREE.PointLight('#ff63d4',.9,9);pink.position.set(-.9,2.4,0);room.add(pink);
+ const hv=box(.9,2.8,2.4,M('#dfe5e8',{metalness:.2}));hv.position.set(2.85,1.6,0);hv.castShadow=true;room.add(hv);
+ const fan=new THREE.Group();fan.position.set(2.38,2.2,0);fan.rotation.z=Math.PI/2;room.add(fan);
+ fan.add(new THREE.Mesh(new THREE.CylinderGeometry(.62,.62,.04,28),M('#26323a')));
+ for(let k=0;k<3;k++){const b=box(1.05,.03,.2,M('#9fb7c4'));b.position.y=.03;const h=new THREE.Group();h.rotation.y=k*Math.PI*2/3;h.add(b);fan.add(h)}
+ const ch=box(1.2,1,1.4,M('#7d8d95',{metalness:.3}));ch.position.set(4.5,.5,-.6);ch.castShadow=true;room.add(ch);
+ const pipe=new THREE.Mesh(new THREE.CylinderGeometry(.07,.07,1.4,8),M('#b0bcc2'));pipe.rotation.z=Math.PI/2;pipe.position.set(3.85,.8,-.6);room.add(pipe);
+ const air=pts(110,'#8fd3ff',.26),wet=pts(60,'#4aa0ff',.2);room.add(air.o,wet.o);
+ const ap=[];for(let i=0;i<air.n;i++)ap.push([Math.random(),(Math.random()*2-1)*1.9]);
+ const loop=(s,z,o,i)=>{const L=[[2.3,4.0],[-3.2,4.0],[-3.2,.35],[2.3,.35]];const seg=Math.floor(s*4)%4,f=s*4-Math.floor(s*4),a=L[seg],b=L[(seg+1)%4];
+  o[i*3]=a[0]+(b[0]-a[0])*f;o[i*3+1]=a[1]+(b[1]-a[1])*f;o[i*3+2]=z};
+ const wseed=i=>{const p=plantPos[Math.random()*plantPos.length|0];wet.p[i*3]=p[0];wet.p[i*3+1]=p[1];wet.p[i*3+2]=p[2];};
+ for(let i=0;i<wet.n;i++){wseed(i);wet.p[i*3+1]+=Math.random()*.8}
+ ticks.push((t,dt)=>{fan.rotation.y=t*6;
+  for(let i=0;i<air.n;i++){ap[i][0]=(ap[i][0]+dt*.07)%1;loop(ap[i][0],ap[i][1],air.p,i)}
+  for(let i=0;i<wet.n;i++){wet.p[i*3+1]+=dt*.5;wet.p[i*3]+=dt*.25;if(wet.p[i*3+1]>4.2||wet.p[i*3]>2.3)wseed(i)}
+  air.geo.attributes.position.needsUpdate=wet.geo.attributes.position.needsUpdate=true;pink.intensity=.8+.15*Math.sin(t*2)});}
+
+/* station 4: designs grid + neural network */
+{const g=groups[4];
+ const tg=new THREE.CylinderGeometry(.15,.15,.36,12,1,false,0,Math.PI);tg.rotateZ(Math.PI/2);
+ const LOC=['#5cc8ff','#7ee0d0','#93dd6c','#ffd36b','#ffb547','#ff8a65','#c8a2ff'];
+ const grid=new THREE.InstancedMesh(tg,new THREE.MeshStandardMaterial({roughness:.4,metalness:.1}),7*20);const dm=new THREE.Object3D();const sc=[];for(let c=0;c<20;c++)sc.push(.7+Math.random()*.7);
+ let n=0;for(let r=0;r<7;r++)for(let c=0;c<20;c++){dm.position.set(-3.6+c*.38,.2,-4.7+r*.42);dm.scale.set(sc[c],sc[c]*.9,.9);dm.updateMatrix();grid.setMatrixAt(n,dm.matrix);grid.setColorAt(n++,new THREE.Color(LOC[r]))}
+ grid.castShadow=true;g.add(grid);
+ const L=[6,9,9,3],xs=[-3.3,-1.1,1.1,3.3],nodes=[];
+ L.forEach((cnt,li)=>{nodes.push([]);for(let k=0;k<cnt;k++){const y=4.1+(k-(cnt-1)/2)*(3.4/Math.max(cnt-1,1))*(cnt>3?1:.55)+1.6;
+  const s=sph(.15,glow(li===0?'#ffd36b':li===3?'#93dd6c':'#5cc8ff',1),14);s.position.set(xs[li],y,0);g.add(s);nodes[li].push(s.position)}});
+ const ev=[];for(let li=0;li<3;li++)for(const a of nodes[li])for(const b of nodes[li+1])ev.push(a.x,a.y,a.z,b.x,b.y,b.z);
+ const eg=new THREE.BufferGeometry();eg.setAttribute('position',new THREE.Float32BufferAttribute(ev,3));
+ g.add(new THREE.LineSegments(eg,new THREE.LineBasicMaterial({color:'#5cc8ff',transparent:true,opacity:.16})));
+ const fv=[];for(const a of nodes[0])fv.push(0,.4,-3.4,a.x,a.y,a.z);const fg=new THREE.BufferGeometry();fg.setAttribute('position',new THREE.Float32BufferAttribute(fv,3));
+ g.add(new THREE.LineSegments(fg,new THREE.LineBasicMaterial({color:'#ffd36b',transparent:true,opacity:.22})));
+ const pulses=[];const pm=glow('#ffffff',1);
+ const route=()=>{const r=[];for(let li=0;li<4;li++)r.push(nodes[li][Math.random()*nodes[li].length|0]);return r};
+ for(let k=0;k<26;k++){const m=sph(.06,pm,8);g.add(m);pulses.push({m,r:route(),s:Math.random()*3})}
+ ticks.push((t,dt)=>{for(const p of pulses){p.s+=dt*.9;if(p.s>=3){p.s=0;p.r=route()}const seg=Math.floor(p.s),f=p.s-seg;p.m.position.lerpVectors(p.r[seg],p.r[seg+1],f)}});}
+
+/* parametric greenhouse at station 4 */
+{const g=groups[4];const K=.34;const gh=new THREE.Group();gh.position.set(0,.17,2.9);g.add(gh);
+ const steel=M('#c9d3d6',{metalness:.6,roughness:.35});
+ const COV={Polyethylene:['#eef6ff',.3,.6],Polycarbonate:['#cfe3f0',.46,.25],Glass:['#e2fdff',.14,.05]};
+ const quad=(p,mat)=>{const geo=new THREE.BufferGeometry(),v=[];[0,1,2,0,2,3].forEach(i=>v.push(...p[i]));geo.setAttribute('position',new THREE.Float32BufferAttribute(v,3));geo.computeVertexNormals();return new THREE.Mesh(geo,mat)};
+ const bar=(a,b,r=.025)=>{const A=new THREE.Vector3(...a),B=new THREE.Vector3(...b),d=B.clone().sub(A);const m=new THREE.Mesh(new THREE.CylinderGeometry(r,r,d.length(),6),steel);m.position.copy(A).add(d.clone().multiplyScalar(.5));m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),d.normalize());m.castShadow=true;return m};
+ window.ghBuild=s=>{
+  gh.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material&&o.material!==steel)o.material.dispose()});gh.clear();
+  const W=s.w*K,L=s.l*K,E=s.e*K,R=s.r*K,x0=-L/2,x1=L/2,z0=-W/2,z1=W/2,Y=E+R,f=.35;
+  const cv=COV[s.cover];const cm=new THREE.MeshStandardMaterial({color:cv[0],transparent:true,opacity:cv[1],roughness:cv[2],side:THREE.DoubleSide,depthWrite:false});
+  const fl=box(L,.04,W,M('#5d6b66'));fl.receiveShadow=true;gh.add(fl);
+  gh.add(quad([[x0,0,z0],[x1,0,z0],[x1,E,z0],[x0,E,z0]],cm),quad([[x0,0,z1],[x1,0,z1],[x1,E,z1],[x0,E,z1]],cm));
+  for(const x of[x0,x1]){gh.add(quad([[x,0,z0],[x,0,z1],[x,E,z1],[x,E,z0]],cm));
+   const tg=new THREE.BufferGeometry();tg.setAttribute('position',new THREE.Float32BufferAttribute([x,E,z0,x,E,z1,x,Y,0],3));tg.computeVertexNormals();gh.add(new THREE.Mesh(tg,cm))}
+  gh.add(quad([[x0,E,z0],[x1,E,z0],[x1,Y,0],[x0,Y,0]],cm),quad([[x0,E,z1],[x1,E,z1],[x1,E+R*(1-f),W/2*f],[x0,E+R*(1-f),W/2*f]],cm));
+  const vent=new THREE.Group();vent.position.set(0,Y,0);gh.add(vent);
+  vent.add(quad([[x0,0,0],[x1,0,0],[x1,-R*f,W/2*f],[x0,-R*f,W/2*f]],cm));vent.rotation.x=-s.v/100*.9;
+  const nb=Math.max(2,Math.round(s.l/3));for(let i=0;i<=nb;i++){const x=x0+i*L/nb;gh.add(bar([x,0,z0],[x,E,z0]),bar([x,0,z1],[x,E,z1]),bar([x,E,z0],[x,Y,0]),bar([x,E,z1],[x,Y,0]))}
+  gh.add(bar([x0,Y,0],[x1,Y,0]),bar([x0,E,z0],[x1,E,z0]),bar([x0,E,z1],[x1,E,z1]));
+  const dm=new THREE.Object3D();
+  if(s.crop==='Lettuce'){const nr=Math.max(2,Math.floor(W/.28)),nc=Math.max(3,Math.floor(L/.26));const im=new THREE.InstancedMesh(new THREE.SphereGeometry(.11,10,8),M('#9be07a'),nr*nc);let n=0;
+   for(let r=0;r<nr;r++)for(let c=0;c<nc;c++){dm.position.set(x0+(c+.5)*L/nc,.07,z0+(r+.5)*W/nr);const q=.85+Math.random()*.3;dm.scale.set(q,.55*q,q);dm.updateMatrix();im.setMatrixAt(n++,dm.matrix)}
+   im.castShadow=true;gh.add(im)}
+  else{const nr=Math.max(2,Math.floor(W/.55)),nc=Math.max(3,Math.floor(L/.32)),H=Math.min(E*.92,1.05);
+   const st=new THREE.InstancedMesh(new THREE.CylinderGeometry(.018,.018,1,5),M('#4f7d33'),nr*nc),lf=new THREE.InstancedMesh(new THREE.SphereGeometry(.09,8,6),M('#3f9a3a'),nr*nc*3),fr=new THREE.InstancedMesh(new THREE.SphereGeometry(.035,6,5),M('#e2422f',{roughness:.5}),nr*nc*2);
+   let a=0,b=0,c2=0;
+   for(let r=0;r<nr;r++)for(let c=0;c<nc;c++){const x=x0+(c+.5)*L/nc,z=z0+(r+.5)*W/nr;
+    dm.position.set(x,H/2,z);dm.scale.set(1,H,1);dm.updateMatrix();st.setMatrixAt(a++,dm.matrix);
+    for(let k=0;k<3;k++){dm.position.set(x+(Math.random()-.5)*.06,H*(.35+k*.3),z+(Math.random()-.5)*.06);const q=1.1-k*.2;dm.scale.set(q,q*1.3,q);dm.updateMatrix();lf.setMatrixAt(b++,dm.matrix)}
+    for(let k=0;k<2;k++){dm.position.set(x+(k?.07:-.07),H*(.25+k*.2),z+.06);dm.scale.set(1,1,1);dm.updateMatrix();fr.setMatrixAt(c2++,dm.matrix)}}
+   [st,lf,fr].forEach(m=>{m.castShadow=true;gh.add(m)})}
+ };
+ ghBuild(GH);}
+
+/* satellite feeding station 4 */
+{const g=groups[4];const sat=new THREE.Group();sat.position.set(4.6,8.6,-3.5);g.add(sat);
+ sat.add(box(.5,.5,.7,M('#d9dee2',{metalness:.6,roughness:.3})));
+ for(const sx of[-1,1]){const pnl=box(1.1,.03,.55,M('#2a4d8f',{metalness:.5,roughness:.3}));pnl.position.x=sx*.85;sat.add(pnl)}
+ const tgt=new THREE.Vector3(0,.3,-3.4).sub(sat.position);const len=tgt.length();
+ const bm=new THREE.Mesh(new THREE.CylinderGeometry(.02,.9,len,24,1,true),new THREE.MeshBasicMaterial({color:'#ffd36b',transparent:true,opacity:.1,side:THREE.DoubleSide,depthWrite:false,blending:THREE.AdditiveBlending}));
+ bm.position.copy(sat.position).add(tgt.clone().multiplyScalar(.5));bm.quaternion.setFromUnitVectors(new THREE.Vector3(0,-1,0),tgt.clone().normalize());g.add(bm);
+ ticks.push(t=>{sat.rotation.y=Math.sin(t*.3)*.3;bm.material.opacity=.07+.05*Math.sin(t*2.2)});}
+
+/* data path joining the four stations */
+const path=new THREE.CatmullRomCurve3([new THREE.Vector3(-15,.2,9.8),new THREE.Vector3(-10.5,.2,2),new THREE.Vector3(-5.5,.2,1.2),new THREE.Vector3(0,.2,1.8),new THREE.Vector3(5.5,.2,1.2),new THREE.Vector3(10.5,.2,2),new THREE.Vector3(15,.2,9.8)]);
+scene.add(new THREE.Mesh(new THREE.TubeGeometry(path,200,.06,6),glow('#5f8f80',.6)));
+const flow=pts(46,'#eafff4',.45);scene.add(flow.o);const fs=[...Array(flow.n)].map((_,i)=>i/flow.n);
+ticks.push((t,dt)=>{for(let i=0;i<flow.n;i++){fs[i]=(fs[i]+dt*.03)%1;const v=path.getPointAt(fs[i]);flow.p[i*3]=v.x;flow.p[i*3+1]=v.y+.12;flow.p[i*3+2]=v.z}flow.geo.attributes.position.needsUpdate=true});
+scene.traverse(o=>{if(o.isMesh&&o.material&&o.material.type==='MeshStandardMaterial'&&!o.material.transparent)o.castShadow=true});
+
+/* labels */
+const labWrap=$('#labels');const NAMES=[null,'Greenhouse climate','Field crop + reflectance','Vertical farm · CLIMA','Neural surrogate'];
+const labs=[];for(let i=1;i<=4;i++){const b=document.createElement('button');b.type='button';b.className='lab';b.innerHTML=`<em style="background:${C[i]}">${i}</em>`;
+ b.append(NAMES[i]);b.addEventListener('click',()=>go(i));labWrap.appendChild(b);labs.push([b,P[i].clone().add(new THREE.Vector3(0,i===4?9.3:i===1?4.6:5.8,0)),0])}
+const SUBS=[[1,[-4,10,-4],'Solar radiation'],[1,[0,2.4,1.5],'Heat'],[1,[1,7.4,0],'Vapour exchange'],[1,[3.6,2.6,2.8],'Four covers · four control strategies'],
+ [2,[0,5.1,.2],'Canopy reflectance'],[2,[0,4.9,-3.9],'Simulated LAI prior + observations'],[2,[0,.9,3.4],'Contrasting nitrogen supply'],
+ [3,[-.9,4.9,1.4],'LED tiers + lettuce'],[3,[2.85,3.4,1.4],'HVAC'],[3,[-3,4.9,2.2],'Transpiration → moisture load'],
+ [4,[0,8.1,0],'Inputs → surrogate → yield + interior climate'],[4,[0,.9,-2.1],'200 designs × 7 locations'],[4,[0,.35,5.5],'Your typology: sliders in the card'],[4,[4.6,9.5,-3.5],'ERA5-Land weather for any site'],[4,[3.3,4.1,0],'Typologies × sites in one pass']];
+const subs=SUBS.map(([s,p,txt])=>{const d=document.createElement('div');d.className='sub';d.textContent=txt;d.style.opacity=0;labWrap.appendChild(d);return[d,P[s].clone().add(new THREE.Vector3(...p)),s]});
+const tmp=new THREE.Vector3();
+function place(el,v,show){tmp.copy(v).project(cam);const vis=show&&tmp.z<1&&Math.abs(tmp.x)<1.1&&Math.abs(tmp.y)<1.1;
+ el.style.left=((tmp.x+1)/2*innerWidth)+'px';el.style.top=((1-tmp.y)/2*innerHeight)+'px';el.style.visibility=vis?'visible':'hidden'}
+
+/* camera views */
+const narrow=()=>innerWidth<=760;
+const VIEWS=[{p:[0,21,31],t:[0,1.5,-1]},{p:[0,7.5,14.5],t:[0,1.8,0]},{p:[0,7.5,12],t:[0,2,-1]},{p:[0,7.5,13],t:[0,2.1,0]},{p:[-1,9.5,17.5],t:[-1,3,1.2]},{p:[3,31,20],t:[3,0,-1]}];
+const vec=a=>new THREE.Vector3(...a);
+let tw=null;
+window.fly=i=>{const v=VIEWS[i];let p=vec(v.p),t=vec(v.t);if(i>=1&&i<=4){p.add(P[i]);t.add(P[i])}
+ const sh=narrow()?0:(i===0||i===5?3.5:2.6);p.x+=sh;t.x+=sh;if(narrow()){p.y+=2.5;p.z+=4;t.y-=1.6}
+ tw={p0:cam.position.clone(),t0:ctl.target.clone(),p,t,s:0,d:RM?.01:1.6};ctl.autoRotate=false};
+const ease=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
+ctl.addEventListener('start',()=>{tw=null;ctl.autoRotate=false});
+// click on a station
+const ray=new THREE.Raycaster(),mv=new THREE.Vector2();let down=null;
+R.domElement.addEventListener('pointerdown',e=>down=[e.clientX,e.clientY]);
+R.domElement.addEventListener('pointerup',e=>{if(!down||Math.hypot(e.clientX-down[0],e.clientY-down[1])>5)return;
+ mv.set(e.clientX/innerWidth*2-1,-(e.clientY/innerHeight)*2+1);ray.setFromCamera(mv,cam);
+ const hit=ray.intersectObjects(groups.slice(1),true)[0];if(!hit)return;let o=hit.object;while(o&&!o.userData.step)o=o.parent;if(o&&o.userData.step!==cur)go(o.userData.step)});
+function size(){R.setSize(innerWidth,innerHeight,false);cam.aspect=innerWidth/innerHeight;cam.fov=narrow()?55:42;cam.updateProjectionMatrix()}
+addEventListener('resize',size);size();fly(0);
+const clock=new THREE.Clock();let T=0;
+(function loop(){requestAnimationFrame(loop);const dt=Math.min(clock.getDelta(),.05);T+=RM?dt*.15:dt;
+ if(tw){tw.s+=dt/tw.d;const k=ease(Math.min(tw.s,1));cam.position.lerpVectors(tw.p0,tw.p,k);ctl.target.lerpVectors(tw.t0,tw.t,k);if(tw.s>=1){tw=null;if(cur===0&&!RM){ctl.autoRotate=true;ctl.autoRotateSpeed=.35}}}
+ for(const f of ticks)f(T,RM?dt*.15:dt);
+ for(const[i,r]of rings){const on=cur===i||cur===0||cur===5;r.material.opacity+=((on?(cur===i?.95:.35):0)-r.material.opacity)*.08}
+ ctl.update();R.render(scene,cam);
+ labs.forEach(([b,v],k)=>place(b,v,cur===0||cur===5||cur===k+1));
+ for(const[d,v,s]of subs){const on=cur===s;d.style.opacity=on?1:0;place(d,v,on)}})();
+}
+}
+</script>
+</body>
+</html>
